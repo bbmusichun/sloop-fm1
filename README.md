@@ -1,7 +1,6 @@
 # Makkuro37
 
 **Alternative firmware for the M-Vave SMK-37 Pro, based on FM-1 firmwares.**
-*Alternative Firmware für das M-Vave SMK-37 Pro, basierend auf SLOOP 2.5 / Felucca für das FM-1.*
 
 Makkuro37 turns the SMK-37 Pro MIDI keyboard into a stand-alone four-track groovebox: three synth tracks and a
 drum machine, synthesised, played and sequenced on the keyboard's own chip. It is a port of [SLOOP](https://github.com/isod89/sloop-fm1) 2.5 by **isod89**, the
@@ -13,8 +12,6 @@ installer) and its own look and sound (animated intro and boot jingle).
 
 > **Status: experimental.** It runs on the author's unit, but it is a hobby project: install it only if you can
 > restore your keyboard yourself, and read [Safety](#safety) first.
-
-SMK-37 Pro port and Makkuro37: M. Geisler (makkuro) &lt;mcgeisler@gmail.com&gt;.
 Everything SLOOP does is described in [README-SLOOP.md](README-SLOOP.md) (SLOOP's own README),
 [GUIDE.md](GUIDE.md) and [SLOOP.md](SLOOP.md).
 
@@ -132,7 +129,7 @@ third-party parts keep their own licenses (see [LICENSING.md](LICENSING.md) and 
   tools; this repository is a fork of SLOOP 2.5).
 - **Felucca** – Leo Kuroshita (@kurogedelic), Hügelton Instruments, <https://github.com/hugelton/Felucca> (the
   original open FM-1 firmware SLOOP is built on).
-- **SMK-37 Pro port and Makkuro37** – M. Geisler (makkuro).
+- **SMK-37 Pro port and Makkuro37** – genkigenki.
 - The CC0 instrument samples are by Versilian Studios (see `assets/samples-cc0/ATTRIBUTION.txt`).
 
 M-Vave, SMK-37 Pro and FM-1 are names of their respective owners. This project is not affiliated with or endorsed by
