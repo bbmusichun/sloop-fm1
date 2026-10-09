@@ -41,9 +41,33 @@ static void str_cpy(char *d, const char *s, unsigned n)
     }
     *d = 0;
 }
+#define RGB(r, g, b) ((uint16_t)((((r) >> 3) << 11) | (((g) >> 2) << 5) | ((b) >> 3)))
+static const uint16_t TE_COL[4] = {RGB(40, 124, 255), RGB(30, 204, 112), RGB(255, 198, 24), RGB(255, 98, 26)};
 #include "makkuro_jingle.c"
 #include "makkuro_splash.c"
+#include "makkuro_vis.c"
 static uint16_t strip[240 * MK_SH], pool[6720];
+/* a visualiser frame f of style v, fed with made-up music (120 BPM at 15 frames/s) */
+static uint32_t vis_feed(int v, int f)
+{
+    int16_t lvl[5], band[12];
+    int8_t note[4], tr[MKV_WP];
+    int i;
+    uint32_t t;
+    static int kick;
+    for (i = 0; i < 5; i++)
+        lvl[i] = (int16_t)(500 + 400 * sin(f * 0.4 + i));
+    for (i = 0; i < 4; i++)
+        note[i] = (int8_t)(f % (3 + i) == 0 ? (f * 5 + i * 3) % 12 : -1);
+    kick = f % 8 == 0 ? 255 : kick > 40 ? kick - 40 : 0;
+    for (i = 0; i < 12; i++)
+        band[i] = (int16_t)(450 + 350 * sin(f * 0.3 + i * 0.9) * (i < 4 ? 1.0 : 0.7));
+    for (i = 0; i < MKV_WP; i++)
+        tr[i] = (int8_t)(90 * sin(6.2832 * i * 2 / MKV_WP + f * 0.5) * (0.6 + 0.4 * sin(i * 0.7 + f * 0.3)));
+    mkv_feed(lvl, note, kick, band, tr, (uint32_t)f * 34u, &t);
+    mk_vis = (uint8_t)v;
+    return t;
+}
 int main(int argc, char **argv)
 {
     int a, y;
@@ -51,14 +75,17 @@ int main(int argc, char **argv)
         SINE[a] = (int16_t)lrint(32767.0 * sin(2 * M_PI * a / 1024));
     mk_mem(pool);
     for (a = 1; a < argc; a++) {
-        uint32_t t = (uint32_t)strtoul(argv[a] + (argv[a][0] == 'o'), 0, 10);
+        uint32_t t = (uint32_t)strtoul(argv[a] + (argv[a][0] == 'o' || argv[a][0] == 'v'), 0, 10);
         mk_ota = argv[a][0] == 'o';
+        mk_vis = 0;
+        if (argv[a][0] == 'v')           /* v<style>,<frame> */
+            t = vis_feed((int)t, atoi(strchr(argv[a], ',') + 1));
         if (mk_ota) {                    /* o<step>,<code> */
             mk_step = (uint8_t)t;
             mk_code = (int8_t)strtol(strchr(argv[a], ',') + 1, 0, 10);
             t = 4000;
         }
-        if (!mk_ota) {                   /* the jingle runs along: the mountains follow its bands */
+        if (!mk_ota && !mk_vis) {        /* the jingle runs along: the mountains follow its bands */
             static uint32_t last = 0xFFFFFFFFu;
             int32_t l[32], r[32], s[32];
             if (t < last || last == 0xFFFFFFFFu)
@@ -133,6 +160,93 @@ int main(int argc, char **argv)
 """
 
 
+BRAND = r"""
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+static uint16_t fb[240 * 240];
+static void lcd_sync(void) {}
+static void lcd_blit(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint16_t *px)
+{
+    uint32_t i, j;
+    for (j = 0; j < h; j++)
+        for (i = 0; i < w; i++)
+            if (x + i < 240 && y + j < 240)
+                fb[(y + j) * 240 + x + i] = px[j * w + i];
+}
+static void lcd_fill(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint16_t c)
+{
+    uint32_t i, j;
+    for (j = 0; j < h; j++)
+        for (i = 0; i < w; i++)
+            if (x + i < 240 && y + j < 240)
+                fb[(y + j) * 240 + x + i] = (uint16_t)(c >> 8 | c << 8);
+}
+#include "gfx.c"
+#include "makkuro_theme.h"
+static const uint16_t TE_COL[4] = {RGB(40, 124, 255), RGB(30, 204, 112), RGB(255, 198, 24), RGB(255, 98, 26)};
+#define H_HEAD 20
+int main(void)
+{
+    uint32_t pass;
+    palette_set(1);                                 /* AMBER */
+    /* the about screen (ui_menu.c draw_menu, ui.menu == 2) */
+    lcd_fill(0, 0, 240, 240, C_BLACK);
+    cv_begin(240, H_HEAD, C_BLACK);
+    cv_text(4, 1, &FONT_S, "ABOUT", C_HI);
+    cv_blit(0, 0);
+    lcd_fill(0, H_HEAD, 240, 1, C_LINE);
+    for (pass = 0; pass < 2u; pass++) {
+        cv_begin(240, pass ? 95u : 124u, C_BLACK);
+        cv_oy = pass ? -124 : 0;
+        cv_text(4, 4, &FONT_L, BRAND_NAME, C_WHITE);
+        cv_rect(BRAND_SAIL_X, 10, 8, 4, TE_COL[0]), cv_rect(BRAND_SAIL_X, 16, 12, 4, TE_COL[1]);
+        cv_rect(BRAND_SAIL_X, 22, 16, 4, TE_COL[2]), cv_rect(BRAND_SAIL_X, 28, 20, 4, TE_COL[3]);
+        cv_text(4, 36, &FONT_S, BRAND_BASED, C_AMB);
+        cv_text(4, 54, &FONT_S, "SLOOP 2.5", C_HI);
+        cv_text(cv_text(4, 72, &FONT_S, "LEO KUROSHITA", C_HI) + 8, 72, &FONT_S, "@KUROGEDELIC", C_AMB);
+        cv_text(4, 88, &FONT_S, "H\xDCGELTON INSTRUMENTS", C_HI);
+        cv_text(4, 104, &FONT_S, "HUGELTON.COM", C_AMB);
+        cv_text(4, 119, &FONT_S, "GPL-3.0, NO WARRANTY", C_HI);
+        cv_text(4, 132, &FONT_S, "GITHUB.COM/ISOD89/SLOOP-FM1", C_AMB);
+        cv_oy = 0;
+        cv_blit(0, H_HEAD + 1 + pass * 124u);
+    }
+    fwrite(fb, 2, 240 * 240, stdout);
+    /* the crash screen (main.c fm1_fault) and the USB rescue screen (recovery.c) */
+    lcd_fill(0, 0, 240, 240, RGB(160, 0, 0));
+    draw_text_box(0, 8, 240, &FONT_S, BRAND_CRASH, C_WHITE, 1);
+    draw_text_box(10, 40, 220, &FONT_S, "VEC 00000010", C_WHITE, 0);
+    fwrite(fb, 2, 240 * 240, stdout);
+    lcd_fill(0, 0, 240, 240, C_BLACK);
+    draw_text_box(0, 64, 240, &FONT_S, BRAND_RESCUE, C_WHITE, 1);
+    draw_text_box(0, 96, 240, &FONT_S, "CONNECT USB", C_WHITE, 1);
+    draw_text_box(0, 124, 240, &FONT_S, "OPEN THE INSTALLER", C_WHITE, 1);
+    draw_text_box(0, 164, 240, &FONT_S, "AUDIO OFF", C_WHITE, 1);
+    fwrite(fb, 2, 240 * 240, stdout);
+    return 0;
+}
+"""
+
+
+def brand(outdir, rgb):
+    gen = SRC.parent.parent.parent / "build" / "gen"
+    if not (gen / "felucca_font.h").exists():
+        print("(no build/gen/felucca_font.h: build once for the branded screens)")
+        return
+    with tempfile.TemporaryDirectory() as td:
+        c, exe = Path(td) / "b.c", Path(td) / "b"
+        c.write_text(BRAND)
+        subprocess.run(["cc", "-O1", "-Wno-unused-function", "-I", str(SRC.parent), "-I", str(gen), str(c),
+                        "-o", str(exe)], check=True)
+        raw = subprocess.run([str(exe)], check=True, capture_output=True).stdout
+    for n, name in enumerate(("about", "crash", "rescue")):
+        img = rgb(raw[n * 115200:(n + 1) * 115200])
+        img.save(outdir / f"brand_{name}_1x.png")
+        img.resize((480, 480), Image.NEAREST).save(outdir / f"brand_{name}.png")
+        print(outdir / f"brand_{name}_1x.png")
+
+
 def jingle(outdir):
     with tempfile.TemporaryDirectory() as td:
         c, exe = Path(td) / "j.c", Path(td) / "j"
@@ -164,22 +278,25 @@ def main():
     a = ap.parse_args()
     times = [int(v) for v in a.ms.split(",")]
     otas = ["o1,0", "o2,0", "o3,0", "o4,0", "o5,0", "o9,-14", "o9,1"]
-    gif = [] if a.no_gif else list(range(0, 4720, 40))   # (MK_LEN)
+    vis = [f"v{v},{f}" for v in (1, 2) for f in range(40)]
+    gif = [] if a.no_gif else list(range(0, 5220, 40))   # (MK_LEN)
     a.outdir.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as td:
         c, exe = Path(td) / "h.c", Path(td) / "h"
         c.write_text(HARNESS)
         subprocess.run(["cc", "-O2", "-Wall", "-Wno-unused-function", "-I", str(SRC.parent), str(c), "-lm",
                         "-o", str(exe)], check=True)
-        raw = subprocess.run([str(exe), *map(str, times + otas + gif)], check=True,
+        raw = subprocess.run([str(exe), *map(str, times + otas + vis + gif)], check=True,
                              capture_output=True).stdout
 
-    def frame(n):
-        px = raw[n * 240 * 240 * 2:(n + 1) * 240 * 240 * 2]
+    def rgb(px):
         img = Image.new("RGB", (240, 240))
         img.putdata([((v >> 11) * 255 // 31, ((v >> 5) & 63) * 255 // 63, (v & 31) * 255 // 31)
                      for v in (int.from_bytes(px[i:i + 2], "big") for i in range(0, len(px), 2))])
         return img
+
+    def frame(n):
+        return rgb(raw[n * 240 * 240 * 2:(n + 1) * 240 * 240 * 2])
 
     def save(img, stem):
         img.save(a.outdir / f"{stem}_1x.png")
@@ -191,10 +308,16 @@ def main():
     frames = [save(frame(n), f"frame_{n:02d}") for n in range(len(times))]
     for k, o in enumerate(otas):
         save(frame(len(times) + k), "ota_" + o[1:].replace(",", "_").replace("-", "m"))
+    base = len(times) + len(otas)
+    for v, name in ((1, "makkuro"), (2, "waterfall")):
+        g = [frame(base + (v - 1) * 40 + k) for k in range(40)]
+        save(g[-1], "vis_" + name)
+        g[0].save(a.outdir / f"vis_{name}.gif", save_all=True, append_images=g[1:], duration=67, loop=0)
     if gif:
-        g = [frame(len(times) + len(otas) + k) for k in range(len(gif))]
+        g = [frame(base + len(vis) + k) for k in range(len(gif))]
         g[0].save(a.outdir / "intro.gif", save_all=True, append_images=g[1:], duration=40, loop=0)
         print(a.outdir / "intro.gif")
+    brand(a.outdir, rgb)
     if not a.no_wav:
         jingle(a.outdir)
     cols = min(3, len(frames))

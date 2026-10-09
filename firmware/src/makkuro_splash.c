@@ -24,7 +24,7 @@
  * the host (MK_HOST). */
 
 #define MK_SH 48                   /* strip rows: 5 strips per frame, 2 strip buffers in cv_px */
-#define MK_LEN 4700u               /* ms */
+#define MK_LEN 5200u               /* ms */
 #define MK_NK 12                   /* roof keys */
 #define Q(v) ((v) * 16)            /* pixels -> 1/16 px */
 #define MK_CYAN 0x28DCFFu
@@ -36,6 +36,11 @@ static int32_t mk_hot = 110;       /* how white the core gets (0..255) */
 static uint32_t mk_mask = 0xFFFFFFu;          /* colour channels drawn (the RGB split) */
 static int32_t mk_shine = -9999;   /* the shine band (x + y / 2, px), -9999 = none */
 static uint8_t mk_ota, mk_step;    /* an update screen: its step (1..5, 9 = result) */
+static uint8_t mk_vis;             /* a visualiser style (makkuro_vis.c): 1 MAKKURO, 2 WATERFALL */
+static int32_t mk_sunr = 40, mk_vear, mk_vwag, mk_vyaw;   /* (the visualiser: the sun, the dog, the turn) */
+static uint32_t mk_vkcol[MK_NK];   /* (the visualiser: a key's colour, 0 = its own) */
+static int16_t mk_vkdy[MK_NK];     /* (and how far it is pressed) */
+static void mkv_strip(uint16_t *buf, int32_t y0, uint32_t t);
 static int8_t mk_code;
 
 /* ---- maths */
@@ -508,9 +513,9 @@ static void mk_sky(uint32_t t)
 {
     static const uint8_t STARS[] = {34, 52, 70, 88, 200, 44, 186, 98, 50, 140, 226, 128, 140, 58,
                                     10, 104, 164, 72, 112, 62, 232, 104, 60, 100, 20, 80, 214, 70};
-    int32_t y, x, k, yh = mk_yh >> 4, r = 40,
+    int32_t y, x, k, yh = mk_yh >> 4, r = mk_sunr,
             cy = mk_ota ? yh + 4 : t < MK_SUN ? yh + r + 1 : yh + r - (r - 4) * mk_spring(t - MK_SUN) / 256;
-    for (y = mk_lo(cy - r, mk_y0); y < mk_y1 && y < yh; y++) {
+    for (y = mk_lo(cy - r, mk_y0); r > 0 && y < mk_y1 && y < yh; y++) {
         int32_t d = y - cy, hw, rel = (d + r) * 256 / (2 * r);
         uint32_t c;
         if (d >= r)
@@ -962,6 +967,8 @@ static uint32_t mk_key_col(int32_t k)
         return 0xFF2020;                                         /* failed: red */
     if (mk_ota && k >= (mk_step >= 5u ? MK_NK : mk_step * MK_NK / 5))
         return 0x383850;                                         /* the progress: keys not lit yet */
+    if (mk_vis)
+        return mk_vkcol[k] ? mk_vkcol[k] : mk_scale(mk_hue(1350u + 1536u * 4u - (uint32_t)k * 1350u / (MK_NK - 1)), 90u);
     return mk_hue(1350u + 1536u * 4u - ((uint32_t)k * 1350u / (MK_NK - 1) + (mk_t > 3000u ? (mk_t - 3000u) / 3u : 0u)) % 1536u);
 }
 
@@ -1077,9 +1084,15 @@ static void mk_prep(uint32_t t)
     mk_t = t;
     mk_vnose = mk_vhead = mk_fneck = 0xFFFFu;
     mk_camera(t);
+    if (mk_vis == 2) {                                           /* (the waterfall: no mesh) */
+        mk_nv = 0;
+        mk_nfw = 0;
+        return;
+    }
     p = mk_expo(mk_prog(t, 700, 1300));                          /* the fly-in */
     yaw = 1024 * 35 / 360 - 1024 * 3 / 4 * (256 - p) / 256 + (mk_ota ? 0 : 1024 * 9 / 360 * mk_prog(t, 3300, MK_LEN - 3300u) / 256);
                                                                   /* (it keeps turning, slowly, to the end) */
+    yaw += mk_vyaw;
     if (t > 1700u && t < 2600u && !mk_ota)                       /* a little settle swing */
         yaw += mk_sin((int32_t)((t - 1700u) * 1024u / 450u)) * 10 * (int32_t)(2600u - t) / 900 / 256;
     mk_hs = mkj_sin((uint32_t)yaw << 22);
@@ -1095,6 +1108,11 @@ static void mk_prep(uint32_t t)
         uint32_t t0 = k < MK_NK ? MK_K0 + (uint32_t)k * MK_KD : MK_PING - MK_LAND;   /* (the black keys land
                                                                                            * on the ping) */
         int32_t s;
+        if (mk_vis && k < MK_NK) {                                /* (the visualiser: pressed by notes) */
+            mk_kdy[k] = mk_vkdy[k];
+            mk_kflash[k] = 0;
+            continue;
+        }
         if (mk_ota) {
             int lit = mk_step >= 5u ? MK_NK : mk_step * MK_NK / 5;
             mk_kdy[k] = 0;
@@ -1141,13 +1159,20 @@ static void mk_prep(uint32_t t)
             mood = s < 450u ? 1 : 0;
         }
         wag = mk_sin((int32_t)(t * 1024u / 600u)) * Q(3) / 256;
+        if (mk_vis) {
+            ear = mk_vear;
+            wag = mk_vwag;
+        }
     }
     mk_dog_mesh(mood, ear, wag);
     mk_dsu = mk_dsv = 256;
     mk_ddy = 0;
 xf:
-    mk_xform(0);
-    mk_faces(0);
+    mk_nl[0] = 0;
+    if (!mk_vis) {                                                /* (the visualiser: no reflection) */
+        mk_xform(0);
+        mk_faces(0);
+    }
     mk_xform(1);
     mk_faces(1);
 }
@@ -1217,7 +1242,7 @@ static void mk_zz(uint32_t t, uint32_t t0)
 }
 
 /* ---- CRT power on at the start, a fade to black at the end (on the finished strip) */
-#define MK_FADE (MK_PING + 100u)   /* the house turns on a little, then all fades out */
+#define MK_FADE (MK_PING + 600u)   /* the whole scene held, the house turning on, then all fades out */
 static void mk_crt(uint32_t t)
 {
     int32_t hh, hw, wh, y, x;                        /* half height, half width (1/16 px), whitening */
@@ -1308,6 +1333,10 @@ static void mk_render(uint16_t *buf, int32_t y0, uint32_t t)
 {
     uint32_t i;
     int32_t sy = mk_ota ? 4 : 0;                                  /* (the update screens lift the scene) */
+    if (mk_vis) {
+        mkv_strip(buf, y0, t);
+        return;
+    }
     mk_buf = buf;
     for (i = 0; i < 240u * MK_SH; i++)
         buf[i] = 0;

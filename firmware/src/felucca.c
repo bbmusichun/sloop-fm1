@@ -21,6 +21,18 @@
 #ifndef MAKKURO37
 #define MAKKURO37 0              /* 1: the MAKKURO37 boot splash and update screens (makkuro_splash.c) */
 #endif
+#if MAKKURO37
+#include "makkuro_theme.h"       /* the MAKKURO37 name on the screens */
+#else
+#define BRAND_NAME "SLOOP"
+#define BRAND_SAIL_X 96
+#define BRAND_BASED "BASED ON FELUCCA"
+#define BRAND_CRASH "FELUCCA CRASH"
+#define BRAND_RESCUE "SLOOP USB RESCUE"
+#define VIS_STYLES 12u
+#define VIS_LAST_NAMES "SLOOP"
+#define VIS_N_STR "/12"
+#endif
 
 #include "libc.c"
 #include "lcd.c"
@@ -227,5 +239,6 @@ static void ota_commit(const uint8_t *parm)
 #include "splash.c"          /* SLOOP boot logo (build/gen/sloop_logo.h) */
 #if MAKKURO37
 #include "makkuro_splash.c"  /* animated MAKKURO37 boot splash instead of the logo */
+#include "makkuro_vis.c"     /* its visualiser styles (ui_vis.c) */
 #endif
 #include "main.c"

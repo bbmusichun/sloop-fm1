@@ -4,7 +4,7 @@
  * dry into the mix, a send into SLOOP's reverb, then the master volume), independent of the project's sounds.
  * A cinematic "deep note": four voices start as a quiet cluster wobbling around G3..D4, glide apart (ease in
  * and out, in cents) into a wide Dmaj9 (D2, F#3, C#4, E4) while swelling, bloom when the dog lands and the
- * title lights (3.0 s), shimmer, and fade out with the picture (4.33..4.7 s). Each roof key's landing rings
+ * title lights (3.0 s), shimmer, and fade out with the picture (4.83..5.2 s). Each roof key's landing rings
  * a small glockenspiel note (D major pentatonic, rising with the rainbow, left to right), and a brighter bell
  * pings when the sun settles into place and the black keys land (4.23 s). mkj_band[] tells the picture how loud each of 12 pitch bands is.
  * Each voice: two oscillators 5 cents apart (left and right), 2-operator FM at a low index (a soft electric
@@ -13,8 +13,8 @@
  * in 150 ms. */
 
 #define MKJ_NV 4
-#define MKJ_LEN 4700u              /* ms, as the splash */
-#define MKJ_END 4330               /* everything fades out from here (makkuro_splash.c MK_FADE) */
+#define MKJ_LEN 5200u              /* ms, as the splash */
+#define MKJ_END 4830               /* everything fades out from here (makkuro_splash.c MK_FADE) */
 static const uint32_t MKJ_SEMI[12] = {    /* phase increments of C9..B9 at 44.1 kHz */
     815363807u, 863847862u, 915214929u, 969636441u, 1027294024u, 1088380105u,
     1153098554u, 1221665363u, 1294309365u, 1371273005u, 1452813141u, 1539201906u};
