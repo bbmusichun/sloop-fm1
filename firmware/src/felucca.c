@@ -191,7 +191,11 @@ static void makkuro_ota(uint32_t step, int32_t code);
 #endif
 static void ota_show(uint32_t step, int32_t code)
 {
+#if BOARD_SMK37   /* step 5 stays on screen while the loader writes the flash: say so */
+    static const char *const STEP[] = {"", "PACKAGE", "CHECK HEAD", "LOADER", "CONFIRM", "UPDATING..."};
+#else
     static const char *const STEP[] = {"", "PACKAGE", "CHECK HEAD", "LOADER", "CONFIRM", "RESTART"};
+#endif
     char b[24];
     if (recovery_active) return;             /* keep polled USB alive during OTA */
 #if MAKKURO37
