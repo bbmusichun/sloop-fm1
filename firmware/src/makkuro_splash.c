@@ -11,8 +11,9 @@
  * horizon (their ridge is the music: makkuro_jingle.c mkj_band), the house flies in from far away turning,
  * the 12 roof keys drop in with a bounce (each landing rings a bell and flashes its pad), the dog falls onto
  * the ridge (squash and stretch), the title lights letter by letter (flicker, RGB split, a shine sweep, a
- * starburst), a slow dolly, the sun comes up behind the mountains (the ping), and the picture fades out into
- * SLOOP's first screen fading in. Under it all the jingle glides from a cluster into a chord that blooms as
+ * starburst), a slow dolly; the sun jumps up behind the mountains and sinks back into place: the ping, and
+ * the black keys drop onto the roof together; the house turns on as the picture fades out into SLOOP's first
+ * screen fading in. Under it all the jingle glides from a cluster into a chord that blooms as
  * the dog lands. The pads and the button LEDs light along. A key, pad or button press ends it at once (the
  * jingle fades out in 150 ms).
  *
@@ -23,7 +24,7 @@
  * the host (MK_HOST). */
 
 #define MK_SH 48                   /* strip rows: 5 strips per frame, 2 strip buffers in cv_px */
-#define MK_LEN 5000u               /* ms */
+#define MK_LEN 4700u               /* ms */
 #define MK_NK 12                   /* roof keys */
 #define Q(v) ((v) * 16)            /* pixels -> 1/16 px */
 #define MK_CYAN 0x28DCFFu
@@ -490,7 +491,7 @@ static uint32_t mk_t;
 
 static void mk_camera(uint32_t t)
 {
-    int32_t p = mk_cubic(mk_prog(t, 3300, 1300)), a;
+    int32_t p = mk_cubic(mk_prog(t, 3300, MK_LEN - 3300u)), a;
     mk_cx = -Q(10) * p / 256;                                    /* the end: a slow dolly in, drifting left */
     mk_cy = Q(55) - Q(5) * p / 256;
     mk_cz = mk_ota ? -Q(300) : -Q(245) + Q(24) * p / 256;          /* (the update screens: further back) */
@@ -501,13 +502,14 @@ static void mk_camera(uint32_t t)
 }
 
 /* ---- the sky: a synthwave sun rising over the horizon at the end, twinkling stars */
-#define MK_SUN 4100u               /* the sun comes up (makkuro_jingle.c MKJ_SUN: the ping) */
+#define MK_SUN 3900u               /* the sun jumps up (a spring: over, then back down) */
+#define MK_PING (MK_SUN + 330u)    /* it settles into place: the ping (makkuro_jingle.c MKJ_PING), the black keys */
 static void mk_sky(uint32_t t)
 {
     static const uint8_t STARS[] = {34, 52, 70, 88, 200, 44, 186, 98, 50, 140, 226, 128, 140, 58,
                                     10, 104, 164, 72, 112, 62, 232, 104, 60, 100, 20, 80, 214, 70};
     int32_t y, x, k, yh = mk_yh >> 4, r = 40,
-            cy = mk_ota ? yh + 4 : yh + r - (r - 4) * mk_cubic(mk_prog(t, MK_SUN, 600)) / 256;   /* up at the ping */
+            cy = mk_ota ? yh + 4 : t < MK_SUN ? yh + r + 1 : yh + r - (r - 4) * mk_spring(t - MK_SUN) / 256;
     for (y = mk_lo(cy - r, mk_y0); y < mk_y1 && y < yh; y++) {
         int32_t d = y - cy, hw, rel = (d + r) * 256 / (2 * r);
         uint32_t c;
@@ -665,7 +667,8 @@ static int16_t *mk_lz;                             /* (sorting) */
 static uint16_t mk_nv, mk_nfw, mk_nl[2];
 static uint16_t mk_vtail[3], mk_veye[3], mk_vnose, mk_vhead, mk_froof, mk_fneck;
 static int32_t mk_kdy[MK_NK + 1];                   /* the keys' drop, 1/16 unit (MK_NK: the black keys) */
-static uint16_t mk_kflash[MK_NK];
+static uint16_t mk_kflash[MK_NK], mk_bflash;         /* (the black keys' flash) */
+static uint16_t mk_vblack[8], mk_nblack;            /* a top corner of each black key (the sparkles) */
 
 static void mk_mem(uint16_t *m)    /* 6720 words */
 {
@@ -832,6 +835,7 @@ static void mk_keys_mesh(void)
                             j == 2 || j == 3 || j == 6 || j == 7 ? z1 : z0, dy);
         mk_box(c, MK_HDR(S_KEY, k, G_KEY), 0xAAu);
     }
+    mk_nblack = 0;
     if (mk_kdy[MK_NK] >= Q(200))
         return;
     for (k = 0; k + 1 < MK_NK; k++) {
@@ -842,6 +846,8 @@ static void mk_keys_mesh(void)
             c[j] = mk_slope(j == 1 || j == 2 || j == 5 || j == 6 ? Q(25) : Q(3), j & 4 ? Q(7) : Q(3),
                             zm + (j == 2 || j == 3 || j == 6 || j == 7 ? 1 : -1) * MK_KW * 3 / 10, mk_kdy[MK_NK]);
         mk_box(c, MK_HDR(S_BLACK, 0, G_KEY), 0xAAu);
+        if (mk_nblack < 8u)
+            mk_vblack[mk_nblack++] = (uint16_t)c[5];
     }
 }
 
@@ -1042,6 +1048,9 @@ static void mk_draw(int pass)
             ec = mk_key_col((int32_t)kk);
             if (mk_kflash[kk])
                 ec = mk_scale(ec, 256u - mk_kflash[kk] / 2u) + mk_scale(0xFFFFFF, mk_kflash[kk] / 2u);
+        } else if (sty == S_BLACK && mk_bflash) {
+            ec = mk_scale(ec, 256u - mk_bflash * 3u / 4u) + mk_scale(0xFFE8FF, mk_bflash * 3u / 4u);
+            lvl += (255 - lvl) * mk_bflash / 256;
         }
         mk_core = pass ? MK_SCORE[sty] : 6;
         mk_glow = pass ? MK_SCORE[sty] * 5 / 2 : 40;
@@ -1069,7 +1078,8 @@ static void mk_prep(uint32_t t)
     mk_vnose = mk_vhead = mk_fneck = 0xFFFFu;
     mk_camera(t);
     p = mk_expo(mk_prog(t, 700, 1300));                          /* the fly-in */
-    yaw = 1024 * 35 / 360 - 1024 * 3 / 4 * (256 - p) / 256 + (mk_ota ? 0 : 1024 * 6 / 360 * mk_cubic(mk_prog(t, 3300, 1300)) / 256);
+    yaw = 1024 * 35 / 360 - 1024 * 3 / 4 * (256 - p) / 256 + (mk_ota ? 0 : 1024 * 9 / 360 * mk_prog(t, 3300, MK_LEN - 3300u) / 256);
+                                                                  /* (it keeps turning, slowly, to the end) */
     if (t > 1700u && t < 2600u && !mk_ota)                       /* a little settle swing */
         yaw += mk_sin((int32_t)((t - 1700u) * 1024u / 450u)) * 10 * (int32_t)(2600u - t) / 900 / 256;
     mk_hs = mkj_sin((uint32_t)yaw << 22);
@@ -1082,7 +1092,8 @@ static void mk_prep(uint32_t t)
         return;
     mk_house_mesh();
     for (k = 0; k <= MK_NK; k++) {                                /* the keys: drop, bounce, flash */
-        uint32_t t0 = MK_K0 + (uint32_t)(k < MK_NK ? k : 6) * MK_KD + (k < MK_NK ? 0u : 480u);
+        uint32_t t0 = k < MK_NK ? MK_K0 + (uint32_t)k * MK_KD : MK_PING - MK_LAND;   /* (the black keys land
+                                                                                           * on the ping) */
         int32_t s;
         if (mk_ota) {
             int lit = mk_step >= 5u ? MK_NK : mk_step * MK_NK / 5;
@@ -1090,6 +1101,7 @@ static void mk_prep(uint32_t t)
             (void)lit;
             if (k < MK_NK)
                 mk_kflash[k] = 0;
+            mk_bflash = 0;
             continue;
         }
         if (t < t0) {
@@ -1100,6 +1112,8 @@ static void mk_prep(uint32_t t)
         mk_kdy[k] = Q(60) * (s < 0 ? -s : s) / 256;
         if (k < MK_NK)
             mk_kflash[k] = (uint16_t)(t - t0 >= MK_LAND ? 256 - mk_prog(t, t0 + MK_LAND, 300u) : 0);
+        else
+            mk_bflash = (uint16_t)(t - t0 >= MK_LAND ? 256 - mk_prog(t, t0 + MK_LAND, 350u) : 0);
     }
     mk_keys_mesh();
     if (mk_ota) {
@@ -1203,7 +1217,7 @@ static void mk_zz(uint32_t t, uint32_t t0)
 }
 
 /* ---- CRT power on at the start, a fade to black at the end (on the finished strip) */
-#define MK_FADE 4700u
+#define MK_FADE (MK_PING + 100u)   /* the house turns on a little, then all fades out */
 static void mk_crt(uint32_t t)
 {
     int32_t hh, hw, wh, y, x;                        /* half height, half width (1/16 px), whitening */
@@ -1306,6 +1320,20 @@ static void mk_render(uint16_t *buf, int32_t y0, uint32_t t)
         mk_draw(0);
         mk_draw(1);
         mk_dog_lines();
+        if (!mk_ota && t >= MK_PING && t < MK_PING + 400u) {        /* the black keys land: a sparkle on each */
+            int32_t p = mk_prog(t, MK_PING, 400u), sz = Q(2) + Q(5) * mk_expo(p) / 256, lv = 256 - p, x, y;
+            uint32_t k;
+            mk_core = 8;
+            mk_glow = 22;
+            for (k = 0; k < mk_nblack; k++) {
+                x = mk_sv[1][2 * mk_vblack[k]] + (int32_t)(k & 1u) * Q(3);
+                y = mk_sv[1][2 * mk_vblack[k] + 1] - Q(3);
+                mk_line(x - sz, y, x + sz, y, 0xFFF0FF, lv, 0);
+                mk_line(x, y - sz, x, y + sz, 0xFFF0FF, lv, 0);
+                mk_line(x - sz / 2, y - sz / 2, x + sz / 2, y + sz / 2, 0xE0A0FF, lv / 2, 0);
+                mk_line(x - sz / 2, y + sz / 2, x + sz / 2, y - sz / 2, 0xE0A0FF, lv / 2, 0);
+            }
+        }
     }
     if (mk_ota) {
         if (mk_step == 5u)
@@ -1350,7 +1378,7 @@ static uint32_t mk_pad(uint32_t r, uint32_t t)
         if (t < MK_DL + 450u)                                       /* a white swell */
             c |= mk_scale(0x3C3C3C, 256u - (t - MK_DL) * 256u / 450u);
     }
-    if (t >= MK_SUN && t < MK_SUN + 200u && (r * 5u + t / 40u) % 3u == 0u)   /* the sunrise ping: a sparkle */
+    if (t >= MK_PING && t < MK_PING + 200u && (r * 5u + t / 40u) % 3u == 0u)   /* the ping: a sparkle */
         c = 0x3C3C3C;
     return c;
 }
@@ -1365,8 +1393,8 @@ static int mk_led(uint32_t i, uint32_t t)
         return (t - 600u) / 45u % 19u == i;
     if (t < MK_DL)
         return (t - MK_K0) / MK_KD % 19u == i || (t - MK_K0) / MK_KD % 19u == (i + 9u) % 19u;
-    if (t < MK_DL + 300u)
-        return 1;
+    if (t < MK_DL + 300u || (t >= MK_PING && t < MK_PING + 100u))
+        return 1;                                                  /* (the bloom, the ping) */
     return (t / 120u + i) % 6u == 0u;
 }
 

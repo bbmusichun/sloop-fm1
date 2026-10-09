@@ -4,16 +4,17 @@
  * dry into the mix, a send into SLOOP's reverb, then the master volume), independent of the project's sounds.
  * A cinematic "deep note": four voices start as a quiet cluster wobbling around G3..D4, glide apart (ease in
  * and out, in cents) into a wide Dmaj9 (D2, F#3, C#4, E4) while swelling, bloom when the dog lands and the
- * title lights (3.0 s), shimmer, and fade out with the picture (4.7..5.0 s). Each roof key's landing rings
+ * title lights (3.0 s), shimmer, and fade out with the picture (4.33..4.7 s). Each roof key's landing rings
  * a small glockenspiel note (D major pentatonic, rising with the rainbow, left to right), and a brighter bell
- * pings when the sun comes up (4.1 s). mkj_band[] tells the picture how loud each of 12 pitch bands is.
+ * pings when the sun settles into place and the black keys land (4.23 s). mkj_band[] tells the picture how loud each of 12 pitch bands is.
  * Each voice: two oscillators 5 cents apart (left and right), 2-operator FM at a low index (a soft electric
  * piano / pad tone), a gentle low-pass; the bells: FM at 3.5:1, a quickly closing index. Peak around -24 dBFS
  * at the master volume's middle. Silent and free (nothing rendered) when not running; mkj_stop() fades out
  * in 150 ms. */
 
 #define MKJ_NV 4
-#define MKJ_LEN 5000u              /* ms, as the splash */
+#define MKJ_LEN 4700u              /* ms, as the splash */
+#define MKJ_END 4330               /* everything fades out from here (makkuro_splash.c MK_FADE) */
 static const uint32_t MKJ_SEMI[12] = {    /* phase increments of C9..B9 at 44.1 kHz */
     815363807u, 863847862u, 915214929u, 969636441u, 1027294024u, 1088380105u,
     1153098554u, 1221665363u, 1294309365u, 1371273005u, 1452813141u, 1539201906u};
@@ -22,7 +23,7 @@ static const int16_t MKJ_TO[MKJ_NV] = {3800, 5400, 6100, 6400};     /* D2 F#3 C#
 static const int16_t MKJ_LVL[MKJ_NV] = {150, 256, 230, 210};        /* (the bass at about half) */
 #define MKJ_K0 2028                /* the first key lands (makkuro_splash.c MK_K0 + MK_LAND), ms */
 #define MKJ_KD 70                  /* then every 70 ms */
-#define MKJ_SUN 4100               /* the sun comes up: the ping */
+#define MKJ_PING 4230              /* the sun settles, the black keys land: the ping (makkuro_splash.c MK_PING) */
 static const uint8_t MKJ_BELL[12] = {69, 71, 74, 76, 78, 81, 83, 86, 88, 90, 93, 95};   /* A4 .. B6 */
 static volatile uint8_t mkj_band[12];   /* (the picture reads them: one byte each, no lock) */
 
@@ -120,10 +121,10 @@ static void mkj_render(int32_t *mix_l, int32_t *mix_r, int32_t *send, uint32_t n
     else if (ms < 3000) {
         int32_t p = mkj_ramp((uint32_t)ms, 500, 2500);
         g = 2000 + (32767 - 2000) * (p * p >> 8) / 256;
-    } else if (ms < 4700)
+    } else if (ms < MKJ_END)
         g = 32767 - ((mkj_sin((uint32_t)ms * 21474836u) + 32768) >> 4);   /* 5 Hz, -6 % */
     else {
-        int32_t q = 256 - mkj_ramp((uint32_t)ms, 4700, 300);
+        int32_t q = 256 - mkj_ramp((uint32_t)ms, MKJ_END, MKJ_LEN - MKJ_END);
         g = 32767 * (q * q >> 8) / 256;
     }
     g = g * mkj.fade >> 15;
@@ -151,7 +152,7 @@ static void mkj_render(int32_t *mix_l, int32_t *mix_r, int32_t *send, uint32_t n
         if (ms >= MKJ_K0 && k >= 0 && k < 12) {
             d = ms - (MKJ_K0 + k * MKJ_KD);
             a = d < 3 ? d * 520 / 3 : 520 * 250 / (250 + d * 4);
-            a = (a * mkj.fade >> 15) * (ms < 4700 ? 256 : 256 - mkj_ramp((uint32_t)ms, 4700, 300)) >> 8;
+            a = (a * mkj.fade >> 15) * (ms < MKJ_END ? 256 : 256 - mkj_ramp((uint32_t)ms, MKJ_END, MKJ_LEN - MKJ_END)) >> 8;
             if (d < 1 && !mkj.bamp[v])
                 mkj.bph[v][0] = mkj.bph[v][1] = 0;  /* (a strike starts at zero phase) */
             mkj_bell(mkj.bph[v], mkj_inc(MKJ_BELL[k] * 100), mkj.bamp[v], a, d < 40 ? 9000 - d * 120 : 4200,
@@ -161,14 +162,14 @@ static void mkj_render(int32_t *mix_l, int32_t *mix_r, int32_t *send, uint32_t n
             mkj_bell(mkj.bph[v], mkj_inc(6900), mkj.bamp[v], 0, 4000, 128, bl, br, n);
         mkj.bamp[v] = a;
     }
-    {   /* the sunrise ping: E6, a bright bell decaying in ~0.6 s */
+    {   /* the ping: E6, a bright bell decaying in ~0.6 s */
         int32_t a = 0;
-        if (ms >= MKJ_SUN) {
-            int32_t d = ms - MKJ_SUN;
+        if (ms >= MKJ_PING) {
+            int32_t d = ms - MKJ_PING;
             a = d < 6 ? d * 1820 / 6 : 1820 * 600 / (600 + d * 3);
             a = a * mkj.fade >> 15;
-            if (ms >= 4700)
-                a = a * (256 - mkj_ramp((uint32_t)ms, 4700, 300)) / 256;
+            if (ms >= MKJ_END)
+                a = a * (320 - mkj_ramp((uint32_t)ms, MKJ_END, MKJ_LEN - MKJ_END)) / 320;   /* (rings into the fade) */
         }
         if (a || mkj.amp[MKJ_NV])
             mkj_voice(mkj.ph[MKJ_NV], mkj_inc(8800), mkj_inc(8803), mkj.amp[MKJ_NV], a, 3000, l, r, n);

@@ -164,7 +164,7 @@ def main():
     a = ap.parse_args()
     times = [int(v) for v in a.ms.split(",")]
     otas = ["o1,0", "o2,0", "o3,0", "o4,0", "o5,0", "o9,-14", "o9,1"]
-    gif = [] if a.no_gif else list(range(0, 5000, 40))
+    gif = [] if a.no_gif else list(range(0, 4720, 40))   # (MK_LEN)
     a.outdir.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as td:
         c, exe = Path(td) / "h.c", Path(td) / "h"
