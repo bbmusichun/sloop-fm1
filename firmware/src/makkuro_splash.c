@@ -441,7 +441,7 @@ static void mk_text(const char *s, int32_t cx, int32_t y, int32_t k, uint32_t c,
 #define MK_T0 3000u                /* the title's start */
 static void mk_title(uint32_t t)
 {
-    static const char T[] = "MAKKURO37";
+    static const char T[] = "SNOOP37";
     int32_t x, li;
     if (mk_y0 > MK_TY + 34 || t < MK_T0)
         return;
@@ -451,8 +451,8 @@ static void mk_title(uint32_t t)
     x = Q(120) - mk_text_w(T, MK_TK) / 2;
     if (t >= MK_T0 + 950u && t < MK_T0 + 1450u)
         mk_shine = -30 + mk_cubic(mk_prog(t, MK_T0 + 950u, 500u)) * 330 / 256;
-    for (li = 0; li < 9; li++) {
-        uint32_t on = MK_T0 + (uint32_t)li * 70u, f, c = mk_hue(1350u - (uint32_t)li * 1350u / 8u);
+    for (li = 0; li < (int32_t)sizeof T - 1; li++) {
+        uint32_t on = MK_T0 + (uint32_t)li * 70u, f, c = mk_hue(1350u - (uint32_t)li * 1350u / (sizeof T - 2u));
         int32_t lvl, split, adv = 0;
         if (t < on) {
             x += (mk_glyph_of(T[li])[1] + MK_GAP) * MK_TK / 16;
@@ -478,7 +478,7 @@ static void mk_title(uint32_t t)
     if (t >= MK_T0 + 1250u && t < MK_T0 + 1700u) {  /* starburst at the 7 */
         int32_t p = mk_prog(t, MK_T0 + 1250u, 450u), r = Q(4) + Q(14) * mk_expo(p) / 256,
                 lvl = 256 - p, a;
-        int32_t cx = Q(229), cy = Q(MK_TY + 1);
+        int32_t cx = Q(120) + mk_text_w(T, MK_TK) / 2 + Q(4), cy = Q(MK_TY + 1);
         mk_core = 10;
         mk_glow = 26;
         for (a = 0; a < 1024; a += 128) {
