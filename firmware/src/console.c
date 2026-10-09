@@ -310,6 +310,20 @@ static void con_padtest(void)
     padled_hold_until = fm1_ms + 20000u;
     con_puts("top row from the left: red green blue white\r\n");
 }
+
+/* one button LED alone for 8 s, to map them (bled 0..18) */
+static void con_bled(const char *p)
+{
+    int ok;
+    uint32_t n = con_num(&p, &ok);
+    if (!ok || n >= SMK_NLED) {
+        con_puts("usage: bled 0..18\r\n");
+        return;
+    }
+    bled_id = (uint8_t)n;
+    bled_hold_until = fm1_ms + 8000u;
+    con_puts("on\r\n");
+}
 #endif
 
 static void con_exec(const char *p)
@@ -331,6 +345,8 @@ static void con_exec(const char *p)
         con_padtest();
     else if (con_word(&p, "leds"))
         con_leds();
+    else if (con_word(&p, "bled"))
+        con_bled(p);
 #endif
     else if (con_word(&p, "memr"))
         con_memr(p);

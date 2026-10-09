@@ -283,8 +283,12 @@ static void ui_leds(void)
         fm1_led[c] = nl[c];
     smk_pad_piano = ui.layer == LY_SCALE;          /* SCALE held: the pads are a little piano (smk_input.h) */
     fm1_led[SMK_BTN_FADER_BANK] = smk_fbank != 0;  /* FADER BANK lit off bank A */
+    fm1_led[SMK_BTN_KNOB_BANK] = ui.menu != 0;     /* KNOB BANK lit while the menu is up */
     if (!is_drum(TSEL) && TSEL->p[P_AMODE])        /* ARP lit while the selected track's arpeggiator runs */
         fm1_led[panel.btn[B_ARP]] = 1;
+    if ((int32_t)(fm1_ms - bled_hold_until) < 0)   /* (console bled: only that LED) */
+        for (c = 0; c < SMK_NLED; c++)
+            fm1_led[c] = c == bled_id;
     if ((int32_t)(fm1_ms - padled_hold_until) >= 0) {   /* the pads. Off is off: no glow layers */
         static const uint8_t PAL[NTRK][3] = {{40, 124, 255}, {30, 204, 112}, {255, 198, 24}, {255, 98, 26}};   /* the screen's track colours (TE_COL) */
         const uint8_t *col = PAL[song.sel % NTRK];
@@ -921,6 +925,10 @@ static void ui_input(void)
     uint32_t home = btn_hold(&ui.home_t0, B_HOME, now, 1);
     int32_t s;
     int layered;
+#if BOARD_SMK37
+    if (pressed & 1u << SMK_BTN_KNOB_BANK)              /* KNOB BANK: the menu, as holding HOME (PATCH) */
+        home = BT_HOLD;
+#endif
     enc_hold = 0;                                       /* (panel.c: every knob readable again this pass) */
     if (pressed || notes)
         ui_input_ms = fm1_ms;
