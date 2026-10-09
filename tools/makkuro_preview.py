@@ -58,6 +58,16 @@ int main(int argc, char **argv)
             mk_code = (int8_t)strtol(strchr(argv[a], ',') + 1, 0, 10);
             t = 4000;
         }
+        if (!mk_ota) {                   /* the jingle runs along: the mountains follow its bands */
+            static uint32_t last = 0xFFFFFFFFu;
+            int32_t l[32], r[32], s[32];
+            if (t < last || last == 0xFFFFFFFFu)
+                mkj_start();
+            last = t;
+            while (mkj.on && mkj.s * 10u / 441u < t)
+                mkj_render(l, r, s, 32);
+            mk_band_tick();
+        }
         mk_prep(t);
         for (y = 0; y < 240; y += MK_SH) {
             mk_render(strip, y, t);

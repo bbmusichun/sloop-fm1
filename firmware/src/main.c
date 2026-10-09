@@ -250,11 +250,11 @@ static void fm1_main(void)
         settings_save();
     }
 #if MAKKURO37
-    makkuro_splash();                                   /* animated, ~5 s; a key press ends it */
+    makkuro_splash();                                   /* animated, ~5 s, fades into the UI; a key ends it */
 #else
     fm1_delay_ms(900);                                  /* (the logo stays a moment) */
-#endif
     lcd_fill(0, 0, 240, 240, C_BLACK);
+#endif
 
     healthy_since = fm1_ms;
     for (;;) {

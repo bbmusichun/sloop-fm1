@@ -7,12 +7,14 @@
  * in the floor).
  *
  * Everything is a function of the time t (ms): eased (easeOutExpo / easeOutCubic), sprung (a damped spring
- * table) and staggered. The intro (MK_LEN): CRT power-on, the sun rises and the grid rushes in, the house
- * flies in from far away turning, the 12 roof keys drop in with a bounce (each landing flashes its pad), the
- * dog falls onto the ridge (squash and stretch), the title lights letter by letter (flicker, RGB split, a shine sweep, a
- * starburst), CRT power-off. Under it all the jingle (makkuro_jingle.c) glides from a cluster into a chord
- * that blooms as the dog lands (the pads swell with it). A key, pad or button press ends it at once (the
- * jingle fades out in 150 ms). A slow dolly at the end. The pads and the button LEDs light along.
+ * table) and staggered. The intro (MK_LEN): CRT power-on, the grid rushes in and mountains rise on the
+ * horizon (their ridge is the music: makkuro_jingle.c mkj_band), the house flies in from far away turning,
+ * the 12 roof keys drop in with a bounce (each landing rings a bell and flashes its pad), the dog falls onto
+ * the ridge (squash and stretch), the title lights letter by letter (flicker, RGB split, a shine sweep, a
+ * starburst), a slow dolly, the sun comes up behind the mountains (the ping), and the picture fades out into
+ * SLOOP's first screen fading in. Under it all the jingle glides from a cluster into a chord that blooms as
+ * the dog lands. The pads and the button LEDs light along. A key, pad or button press ends it at once (the
+ * jingle fades out in 150 ms).
  *
  * A frame is rendered in five strips of 240 x 48 px into the two halves of the canvas pool (cv_px, gfx.c),
  * alternately, so one strip renders while the last one goes out (~12 frames/s at 12 MHz SPI).
@@ -498,12 +500,14 @@ static void mk_camera(uint32_t t)
     mk_yh = Q(MK_Y0) - MK_F * 16 * mk_sb / mk_cb;
 }
 
-/* ---- the sky: a synthwave sun rising over the horizon, a haze, twinkling stars */
+/* ---- the sky: a synthwave sun rising over the horizon at the end, twinkling stars */
+#define MK_SUN 4100u               /* the sun comes up (makkuro_jingle.c MKJ_SUN: the ping) */
 static void mk_sky(uint32_t t)
 {
     static const uint8_t STARS[] = {34, 52, 70, 88, 200, 44, 186, 98, 50, 140, 226, 128, 140, 58,
                                     10, 104, 164, 72, 112, 62, 232, 104, 60, 100, 20, 80, 214, 70};
-    int32_t y, x, k, yh = mk_yh >> 4, r = 40, cy = yh + 4 + 60 - 60 * mk_cubic(mk_prog(t, 300, 1000)) / 256;
+    int32_t y, x, k, yh = mk_yh >> 4, r = 40,
+            cy = mk_ota ? yh + 4 : yh + r - (r - 4) * mk_cubic(mk_prog(t, MK_SUN, 600)) / 256;   /* up at the ping */
     for (y = mk_lo(cy - r, mk_y0); y < mk_y1 && y < yh; y++) {
         int32_t d = y - cy, hw, rel = (d + r) * 256 / (2 * r);
         uint32_t c;
@@ -583,6 +587,57 @@ static void mk_floor(uint32_t t)
             row[x] = 0;
             mk_put(x, y, 0xFF32C8, i * lvl >> 8, pd < 8 ? (8 - pd) * 8 * lvl >> 8 : 0, 0);
         }
+    }
+}
+
+/* ---- mountains on the horizon (far behind the house, seen by the camera) whose ridge is the music: the
+ * jingle's 12 pitch bands (makkuro_jingle.c mkj_band), high on the left, low on the right (under the sun) */
+static uint8_t mk_bandz[12];       /* smoothed: up fast, down slowly (per frame) */
+static void mk_band_tick(void)
+{
+    int k;
+    for (k = 0; k < 12; k++) {
+        int32_t v = mkj_band[k], z = mk_bandz[k];
+        mk_bandz[k] = (uint8_t)(v > z ? z + (v - z) * 3 / 4 : z - (z - v) / 4);
+    }
+}
+
+static void mk_pw(int32_t wx, int32_t wy, int32_t wz, int32_t *p)    /* a world point (1/16 unit) to the screen */
+{
+    int32_t yc, zc;
+    wx -= mk_cx;
+    wy -= mk_cy;
+    wz -= mk_cz;
+    yc = (wy * mk_cb + wz * mk_sb) >> 15;
+    zc = (wz * mk_cb - wy * mk_sb) >> 15;
+    if (zc < Q(8))
+        zc = Q(8);
+    p[0] = mk_lo(mk_hi(Q(120) + MK_F * 16 * wx / zc, 8000), -8000);
+    p[1] = mk_lo(mk_hi(Q(MK_Y0) - MK_F * 16 * yc / zc, 8000), -8000);
+}
+
+#define MK_HN 25                   /* ridge points */
+static void mk_hills(uint32_t t)
+{
+    static const uint8_t JAG[5] = {16, 30, 12, 36, 22};
+    int32_t i, a[2], b[2], pa[2] = {0, 0}, pb[2] = {0, 0}, rise = mk_ota ? 256 : mk_cubic(mk_prog(t, 500, 900));
+    if (mk_y0 > (mk_yh >> 4) + 2 || mk_y1 < (mk_yh >> 4) - 50 || !rise)
+        return;
+    mk_core = 10;
+    mk_glow = 26;
+    for (i = 0; i < MK_HN; i++) {
+        int32_t f = (MK_HN - 1 - i) * 11 * 256 / (MK_HN - 1), k = f >> 8, w = f & 255, lv, h, x = Q(-1150) + i * Q(2300) / (MK_HN - 1);
+        lv = (mk_bandz[k] * (256 - w) + mk_bandz[k < 11 ? k + 1 : 11] * w) >> 8;
+        h = (Q(JAG[i % 5]) * (i & 1 ? 2 : 3) / 3 + Q(230) * lv / 255) * rise / 256;
+        mk_pw(x, h, Q(1100), a);
+        mk_pw(x, 0, Q(1100), b);
+        if (i) {
+            int32_t q[8];
+            q[0] = pa[0]; q[1] = pa[1]; q[2] = a[0]; q[3] = a[1]; q[4] = b[0]; q[5] = b[1] + 16; q[6] = pb[0]; q[7] = pb[1] + 16;
+            mk_poly(q, 4, 0x0C0418, 256);
+            mk_line(pa[0], pa[1], a[0], a[1], mk_hue(1280u - (uint32_t)i * 640u / MK_HN), 150 + lv * 106 / 255, 0);
+        }
+        pa[0] = a[0]; pa[1] = a[1]; pb[0] = b[0]; pb[1] = b[1];
     }
 }
 
@@ -1147,7 +1202,8 @@ static void mk_zz(uint32_t t, uint32_t t0)
     }
 }
 
-/* ---- CRT power on / off (on the finished strip) */
+/* ---- CRT power on at the start, a fade to black at the end (on the finished strip) */
+#define MK_FADE 4700u
 static void mk_crt(uint32_t t)
 {
     int32_t hh, hw, wh, y, x;                        /* half height, half width (1/16 px), whitening */
@@ -1162,18 +1218,14 @@ static void mk_crt(uint32_t t)
             hw = Q(121);
             wh = 220 - p * 220 / 256;
         }
-    } else if (t >= 4600u && t < MK_LEN) {
-        if (t < 4800u) {
-            int32_t p = mk_prog(t, 4600, 200);
-            hh = 24 + (Q(120) - 24) * (256 - p) / 256 * (256 - p) / 256;
-            hw = Q(121);
-            wh = p * 200 / 256;
-        } else {
-            int32_t p = mk_prog(t, 4800, 200);
-            hh = 24 - 12 * p / 256;
-            hw = Q(120) * (256 - mk_cubic(p)) / 256 + 24;
-            wh = 256 - (p > 200 ? (p - 200) * 4 : 0);
+    } else if (t >= MK_FADE) {                     /* the end: a fade to black */
+        int32_t k = 256 - mk_prog(t, MK_FADE, MK_LEN - MK_FADE), n = 240 * (mk_y1 - mk_y0);
+        for (y = 0; y < n; y++) {
+            uint32_t c = mk_buf[y];
+            mk_buf[y] = (uint16_t)((((c >> 11) * (uint32_t)k >> 8) << 11) | ((((c >> 5) & 63u) * (uint32_t)k >> 8) << 5) |
+                                   ((c & 31u) * (uint32_t)k >> 8));
         }
+        return;
     } else
         return;
     for (y = mk_y0; y < mk_y1; y++) {
@@ -1249,6 +1301,7 @@ static void mk_render(uint16_t *buf, int32_t y0, uint32_t t)
     mk_y1 = y0 + MK_SH + sy;
     mk_sky(t);
     mk_floor(t);
+    mk_hills(t);
     if (mk_nv) {
         mk_draw(0);
         mk_draw(1);
@@ -1290,14 +1343,14 @@ static uint32_t mk_pad(uint32_t r, uint32_t t)
     }
     if (t >= MK_DL) {                                              /* the chord blooms: all join a rainbow sweep */
         k = t < MK_DL + 300u ? (t - MK_DL) * 256u / 300u : 256u;
-        if (t > 4600u)
-            k = t < 4900u ? k * (4900u - t) / 300u : 0u;
+        if (t > MK_FADE)
+            k = t < MK_LEN ? k * (MK_LEN - t) / (MK_LEN - MK_FADE) : 0u;
         pos = (r & 7u) * 150u + (r >> 3) * 60u;
         c = mk_scale(mk_hue(t * 3u / 2u + 1536u * 4u - pos), k * 50u / 256u);
         if (t < MK_DL + 450u)                                       /* a white swell */
             c |= mk_scale(0x3C3C3C, 256u - (t - MK_DL) * 256u / 450u);
     }
-    if (t >= 4250u && t < 4450u && (r * 5u + t / 40u) % 3u == 0u)    /* the chime: a sparkle */
+    if (t >= MK_SUN && t < MK_SUN + 200u && (r * 5u + t / 40u) % 3u == 0u)   /* the sunrise ping: a sparkle */
         c = 0x3C3C3C;
     return c;
 }
@@ -1306,7 +1359,7 @@ static uint32_t mk_pad(uint32_t r, uint32_t t)
  * on at the bloom, a slow chase, off at the end */
 static int mk_led(uint32_t i, uint32_t t)
 {
-    if (t < 600u || t >= 4600u)
+    if (t < 600u || t >= MK_FADE)
         return 0;
     if (t < 1900u)
         return (t - 600u) / 45u % 19u == i;
@@ -1367,6 +1420,7 @@ static void makkuro_splash(void)
     mkj_start();
     for (;;) {
         uint32_t now = fm1_in.notes | fm1_in.buttons;
+        mk_band_tick();
         fm1_wdt_feed();
         usb_retry(fm1_ms);
         t = fm1_ms - t0;
@@ -1379,6 +1433,23 @@ static void makkuro_splash(void)
     mkj_stop();                             /* (a skip: fades out in 150 ms; else it has ended) */
     mk_lights(MK_LEN);
     lcd_sync();
+    lcd_fill(0, 0, 240, 240, 0);
+    if (t >= MK_LEN) {                      /* SLOOP's first screen fades in (drawn four times, brighter) */
+        uint32_t k;
+        for (k = 1; k <= 4u; k++) {
+            uint32_t t1 = fm1_ms;
+            lcd_dim = k * 64u;
+            ui.force = 1;
+            ui_draw();
+            lcd_sync();
+            while (fm1_ms - t1 < 70u && !((fm1_in.notes | fm1_in.buttons) & ~held)) {
+                fm1_wdt_feed();
+                usb_retry(fm1_ms);
+            }
+        }
+        lcd_dim = 256u;
+    }
+    ui.force = 1;                           /* (the main loop draws it all again, at full brightness) */
 }
 
 /* a firmware-update screen (felucca.c ota_show): one still frame; results stay 1.5 s */
