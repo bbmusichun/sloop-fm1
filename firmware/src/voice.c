@@ -14,9 +14,11 @@
 static uint32_t vage;                                   /* voice ages: one clock for every part */
 #if BOARD_SMK37
 /* the SMK-37 Pro's wheels (main.c smk_wheels), on the selected synth track: the pitch wheel bends
- * (1/4096 semitone, +-SMK_BEND_ST semitones), the mod wheel adds vibrato from the track's LFO (0..127 = up
- * to +-1 semitone) */
+ * (1/4096 semitone, +-SMK_BEND_ST semitones), the mod wheel adds a vibrato of its own (a triangle at
+ * SMK_VIB_HZ from the 24 MHz time base, not the preset's LFO; 0..127 = up to +-1 semitone) */
 #define SMK_BEND_ST 7
+#define SMK_VIB_HZ 6u
+#define SMK_VIB_K (SMK_VIB_HZ * 179u)          /* phase per TIMER4 tick: 2^32 / 24e6 = 178.96 */
 static volatile int32_t perf_bend;
 static volatile int32_t perf_modw;
 #endif
@@ -703,8 +705,12 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
             int32_t q = (v->pitch_cur << 8) + v->pitch_frac + ((lfo * p[P_LD_PIT] * 3) >> 7) +
                         ((v->penv * p[P_ED_PIT] * 3) >> 7);
 #if BOARD_SMK37
-            if (t == TSEL)                              /* the wheels: bend and vibrato */
-                q += perf_bend + ((t->lfo_val * perf_modw) >> 10);
+            if (t == TSEL) {                            /* the wheels: bend and vibrato */
+                uint32_t ph = fm1_ticks() * SMK_VIB_K;
+                int32_t tri = (int32_t)((ph >> 15) & 0xFFFFu);
+                tri = (ph & 0x80000000u ? 0xFFFF - tri : tri) - 32768;   /* triangle, +-32767 */
+                q += perf_bend + ((tri * perf_modw) >> 10);
+            }
 #endif
             pitch = (q >> 8) + tune;
             m.pitch16 = clamp(pitch, 0, 2047);
