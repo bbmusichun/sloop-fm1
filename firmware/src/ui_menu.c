@@ -6,12 +6,21 @@
  * its row), PRESETS moves the cursor; OCT+ steps the cursor's setting round or opens it (CALIBRATION, ABOUT),
  * OCT- closes (from ABOUT: back to the section). */
 /* ------------------------------------------------------------ menu --- */
+#if MAKKURO37
+enum { MI_COLOR, MI_ZOOM, MI_LIGHTS, MI_KEYS, MI_NOTES, MI_LOWCUT, MI_USB, MI_SERIAL, MI_BOOT, MI_PANEL, MI_ABOUT, MI_COUNT };
+static const char *const MI_NAME[MI_COUNT] = {"COLOR", "ZOOM", "LIGHTS", "KEYS", "NOTES", "SPEAKER LOWCUT", "USB AUDIO",
+                                              "USB SERIAL", "BOOT LOGO", "HARDWARE CALIBRATION", "ABOUT"};
+static const char *const BOOT_NAME[BOOT_N] = {"SNOOP37", "SLOOP", "NONE"};
+#define MI_SYS0 MI_BOOT
+#else
 enum { MI_COLOR, MI_ZOOM, MI_LIGHTS, MI_KEYS, MI_NOTES, MI_LOWCUT, MI_USB, MI_SERIAL, MI_PANEL, MI_ABOUT, MI_COUNT };
 static const char *const MI_NAME[MI_COUNT] = {"COLOR", "ZOOM", "LIGHTS", "KEYS", "NOTES", "SPEAKER LOWCUT", "USB AUDIO",
                                               "USB SERIAL", "HARDWARE CALIBRATION", "ABOUT"};
+#define MI_SYS0 MI_PANEL
+#endif
 enum { MS_SCREEN, MS_LIGHTS, MS_AUDIO, MS_SYSTEM, MS_COUNT };
 static const char *const MS_NAME[MS_COUNT] = {"SCREEN", "LIGHTS", "AUDIO", "SYSTEM"};   /* (AUDIO: and USB) */
-static const uint8_t MS_FIRST[MS_COUNT + 1] = {MI_COLOR, MI_LIGHTS, MI_LOWCUT, MI_PANEL, MI_COUNT};   /* rows of each */
+static const uint8_t MS_FIRST[MS_COUNT + 1] = {MI_COLOR, MI_LIGHTS, MI_LOWCUT, MI_SYS0, MI_COUNT};   /* rows of each */
 static const char *const LIGHTS_NAME[LIGHTS_N] = {"OFF", "LOW", "MID", "HIGH"};   /* every button lit, the labels readable */
 static const char *const KEYS_NAME[KEYS_N] = {"OFF", "C KEYS", "WHITE KEYS", "ALL KEYS"};      /* keys lit too, at the LIGHTS level */
 #define MI_Y0 26                                   /* the first row, under the section tabs */
@@ -41,6 +50,9 @@ static const char *mi_value(uint32_t i, uint16_t *c)
     case MI_LOWCUT: return settings.lowcut ? "ON" : "OFF";
     case MI_USB: return usb_full ? "FULL" : "MASTER";
     case MI_SERIAL: return usb_serial ? "ON" : "OFF";
+#if MAKKURO37
+    case MI_BOOT: return BOOT_NAME[boot_logo % BOOT_N];
+#endif
     default:
         *c = C_DIM;
         return "";                                    /* (an action: OCT+ opens it) */
@@ -53,6 +65,9 @@ static void draw_menu(void)
     uint32_t sig = ui.menu * 7u + ui.menu_sel * 131u + settings.palette * 1009u + settings.lowcut * 7919u +
                    settings.zoom * 104729u + lights_lvl * 1299709u + lights_keys * 15485863u +
                    lights_notes * 32452843u + usb_full * 49979687u + usb_serial * 86028121u;
+#if MAKKURO37
+    sig += boot_logo * 122949829u;
+#endif
     if (!ui.force && sig == ui.menu_sig)
         return;
     ui.menu_sig = sig;
@@ -179,6 +194,16 @@ static void mi_set(uint32_t i, int32_t s)
     case MI_NOTES:
         lights_notes = (uint8_t)(s > 0 ? 1u : s < 0 ? 0u : !lights_notes);
         break;
+#if MAKKURO37
+    case MI_BOOT:                                      /* SNOOP37 / SLOOP / NONE; OCT+ steps round */
+        if (s > 0 && boot_logo + 1u < BOOT_N)
+            boot_logo++;
+        else if (s < 0 && boot_logo > 0u)
+            boot_logo--;
+        else if (!s)
+            boot_logo = (uint8_t)((boot_logo + 1u) % BOOT_N);
+        break;
+#endif
     case MI_LIGHTS:
     case MI_KEYS: {                                    /* brighter / dimmer (stops at the ends); OCT+ steps round */
         uint8_t *v = i == MI_LIGHTS ? &lights_lvl : &lights_keys;
