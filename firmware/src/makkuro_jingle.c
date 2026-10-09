@@ -179,9 +179,9 @@ static void mkj_render(int32_t *mix_l, int32_t *mix_r, int32_t *send, uint32_t n
     for (i = 0; i < n; i++) {                       /* a gentle low-pass (~4.5 kHz), into the mix and the reverb */
         mkj.lpl += ((l[i] << 2) - mkj.lpl) * 15 >> 5;
         mkj.lpr += ((r[i] << 2) - mkj.lpr) * 15 >> 5;
-        mix_l[i] += (mkj.lpl >> 2) + bl[i];
-        mix_r[i] += (mkj.lpr >> 2) + br[i];
-        send[i] += ((mkj.lpl + mkj.lpr) >> 3) + ((bl[i] + br[i]) >> 1);
+        mix_l[i] += ((mkj.lpl >> 2) + bl[i]) >> 1;   /* (>> 1: the whole jingle at half level, -6 dB) */
+        mix_r[i] += ((mkj.lpr >> 2) + br[i]) >> 1;
+        send[i] += (((mkj.lpl + mkj.lpr) >> 3) + ((bl[i] + br[i]) >> 1)) >> 1;
     }
     for (v = 0; v < 12; v++)
         mkj_band[v] = (uint8_t)(band[v] > 2047 ? 255 : band[v] >> 3);
