@@ -23,6 +23,15 @@
 #include "hostsim.c"
 #undef main
 #include <assert.h>
+/* SLOOP's words on the screens (felucca.c without MAKKURO37) */
+#define BRAND_NAME "SLOOP"
+#define BRAND_SAIL_X 96
+#define BRAND_BASED "BASED ON FELUCCA"
+#define BRAND_CRASH "FELUCCA CRASH"
+#define BRAND_RESCUE "SLOOP USB RESCUE"
+#define VIS_STYLES 12u
+#define VIS_LAST_NAMES "SLOOP"
+#define VIS_N_STR "/12"
 static uint16_t screen[240*240];
 static void lcd_sync(void) {}
 static void lcd_blit(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint16_t *p)
