@@ -31,6 +31,9 @@
 #include "params.c"
 #include "voice.c"
 #include "slicer.c"          /* per-track SLICER insert, used by fx.c */
+#if MAKKURO37
+#include "makkuro_jingle.c"  /* the boot jingle's synth (mixed in by fx.c mix_block) */
+#endif
 #include "fx.c"
 #ifndef FELUCCA_OTA
 #define FELUCCA_OTA 1            /* M-UPGRADE update entry; needs FELUCCA_FLASH */

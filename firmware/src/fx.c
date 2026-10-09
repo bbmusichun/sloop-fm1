@@ -510,6 +510,9 @@ static void mix_block(int32_t *out, uint32_t n)
         }
     }
     click_render(mix_l, mix_r, n);                      /* the metronome: its own voice (drums.c), any kit, any mute */
+#if MAKKURO37
+    mkj_render(mix_l, mix_r, send_r, n);                /* the MAKKURO37 boot jingle (makkuro_jingle.c) */
+#endif
     fx_buses(send_c, send_d, send_r, wet_l, wet_r, n);
     for (i = 0; i < n; i++) {
         mix_l[i] += wet_l[i];

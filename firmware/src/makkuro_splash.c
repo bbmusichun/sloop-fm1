@@ -6,10 +6,11 @@
  *
  * Everything is a function of the time t (ms): eased (easeOutExpo / easeOutCubic), sprung (a damped spring
  * table) and staggered. The intro (MK_LEN): CRT power-on, the sun rises and the grid rushes in, the house
- * draws itself, the 12 roof keys drop in with a bounce (each landing flashes its pad and plays a note of a
- * rising pentatonic jingle, seq.c mkj_*), the dog falls onto the ridge (squash and stretch), the title lights
- * letter by letter (flicker, RGB split, a shine sweep, a starburst), CRT power-off. A key, pad or button
- * press ends it at once (the jingle's notes are released).
+ * draws itself, the 12 roof keys drop in with a bounce (each landing flashes its pad), the dog falls onto the
+ * ridge (squash and stretch), the title lights letter by letter (flicker, RGB split, a shine sweep, a
+ * starburst), CRT power-off. Under it all the jingle (makkuro_jingle.c) glides from a cluster into a chord
+ * that blooms as the dog lands (the pads swell with it). A key, pad or button press ends it at once (the
+ * jingle fades out in 150 ms).
  *
  * A frame is rendered in five strips of 240 x 48 px into the two halves of the canvas pool (cv_px, gfx.c),
  * alternately, so one strip renders while the last one goes out (~12 frames/s at 12 MHz SPI).
@@ -1036,9 +1037,7 @@ static void mk_render(uint16_t *buf, int32_t y0, uint32_t t)
         buf[i] = (uint16_t)(buf[i] >> 8 | buf[i] << 8);
 }
 
-/* ---- the jingle and the pads */
-static const uint8_t MK_NOTE[MK_NK] = {60, 62, 64, 67, 69, 72, 74, 76, 79, 81, 84, 86};   /* C pentatonic up */
-
+/* ---- the pads (the jingle: makkuro_jingle.c, started and stopped with the animation) */
 static uint32_t mk_land(int k) { return MK_K0 + (uint32_t)k * MK_KD + MK_LAND; }
 
 /* the colour of pad r (reading order: 0..7 the top row, 8..15 the bottom row) at t, <= 60 per channel */
@@ -1057,7 +1056,11 @@ static uint32_t mk_pad(uint32_t r, uint32_t t)
         if (t > 4600u)
             k = t < 4900u ? k * (4900u - t) / 300u : 0u;
         c = mk_scale(mk_hue(t * 3u / 2u + 1536u * 4u - (r & 7u) * 150u - (r >> 3) * 60u), k * 50u / 256u);
+        if (t < MK_DL + 450u)                                       /* the chord blooms: a white swell */
+            c |= mk_scale(0x3C3C3C, 256u - (t - MK_DL) * 256u / 450u);
     }
+    if (t >= 4250u && t < 4450u && (r * 5u + t / 40u) % 3u == 0u)    /* the chime: a sparkle */
+        c = 0x3C3C3C;
     return c;
 }
 
@@ -1101,8 +1104,9 @@ static void makkuro_splash_bg(void)
 /* the animation, MK_LEN ms; a new key, pad or button press ends it */
 static void makkuro_splash(void)
 {
-    uint32_t t0 = fm1_ms, t = 0, held = fm1_in.notes | fm1_in.buttons, on = 0, k;
+    uint32_t t0 = fm1_ms, t = 0, held = fm1_in.notes | fm1_in.buttons;
     mk_ota = 0;
+    mkj_start();
     for (;;) {
         uint32_t now = fm1_in.notes | fm1_in.buttons;
         fm1_wdt_feed();
@@ -1111,19 +1115,10 @@ static void makkuro_splash(void)
         if (t >= MK_LEN || (now & ~held))
             break;
         held &= now;                        /* (held at boot: a new press of it counts) */
-        for (k = 0; k < MK_NK; k++) {       /* the jingle: each key's note from its landing, ~180 ms */
-            uint32_t l = mk_land((int)k), want = t >= l && t < l + (k == MK_NK - 1u ? 600u : 180u);
-            if (want != ((on >> k) & 1u)) {
-                mkj_req(MK_NOTE[k], want ? 84u : 0u);
-                on ^= 1u << k;
-            }
-        }
         mk_frame(t);
         mk_pads(t);
     }
-    for (k = 0; k < MK_NK; k++)             /* no note may hang */
-        if ((on >> k) & 1u)
-            mkj_req(MK_NOTE[k], 0);
+    mkj_stop();                             /* (a skip: fades out in 150 ms; else it has ended) */
     mk_pads(MK_LEN);
     lcd_sync();
 }
