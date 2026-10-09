@@ -1549,6 +1549,36 @@ static void audition_block(void)
             trk_note_on(TDRUM, LANE_NOTE[l], lvl_vel((lv >> (2u * l)) & 3u, 100));
 }
 
+#if MAKKURO37
+/* the MAKKURO37 boot jingle (makkuro_splash.c): notes asked for by the main loop, played here, in the audio
+ * context, on the selected synth track (else the first). An entry: note | velocity << 8, velocity 0 = off */
+static volatile uint32_t mkj_q[8], mkj_w;
+static uint32_t mkj_r;
+static void mkj_req(uint32_t note, uint32_t vel)
+{
+    fm1_irq_off();
+    if (mkj_w - mkj_r < 8u) {
+        mkj_q[mkj_w % 8u] = note | vel << 8;
+        mkj_w++;
+    }
+    fm1_irq_on();
+}
+static void mkj_block(void)
+{
+    track_t *t = &trk[song.sel % NTRK];
+    if (is_drum(t))
+        t = &trk[0];
+    while (mkj_r != mkj_w) {
+        uint32_t e = mkj_q[mkj_r % 8u];
+        mkj_r++;
+        if (e >> 8)
+            trk_note_on(t, e & 127u, e >> 8);
+        else
+            trk_note_off(t, e & 127u);
+    }
+}
+#endif
+
 #if BOARD_SMK37
 /* the SMK's 10 keys beyond the FM-1's 27 (C3..E3 below, G#5..C6 above): plain notes on a synth track
  * in PLAY, chromatic from the FM-1 key map (53 = F3), with OCT and TRANS; silent elsewhere */
@@ -1589,6 +1619,9 @@ static void keyboard_block(void)
 {
     uint32_t cur = fm1_in.notes, ch = cur ^ kb_prev, k, r;
     audition_block();
+#if MAKKURO37
+    mkj_block();                                      /* (the boot jingle) */
+#endif
 #if BOARD_SMK37
     ext_keys_block();
 #endif

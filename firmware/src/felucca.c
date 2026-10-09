@@ -18,6 +18,9 @@
 #endif
 #include "fm1_lcd_hw.h"
 #include "felucca_tables.h"
+#ifndef MAKKURO37
+#define MAKKURO37 0              /* 1: the MAKKURO37 boot splash and update screens (makkuro_splash.c) */
+#endif
 
 #include "libc.c"
 #include "lcd.c"
@@ -168,11 +171,18 @@ static int ota_prog(uint32_t off, const void *p, uint32_t n)
     return fl_write(off, p, n);
 }
 static int ota_fread(uint32_t off, void *p, uint32_t n) { return st_read(off, p, n); }
+#if MAKKURO37
+static void makkuro_ota(uint32_t step, int32_t code);
+#endif
 static void ota_show(uint32_t step, int32_t code)
 {
     static const char *const STEP[] = {"", "PACKAGE", "CHECK HEAD", "LOADER", "CONFIRM", "RESTART"};
     char b[24];
     if (recovery_active) return;             /* keep polled USB alive during OTA */
+#if MAKKURO37
+    makkuro_ota(step, code);                 /* (makkuro_splash.c) */
+    return;
+#endif
     lcd_fill(0, 0, 240, 240, C_BLACK);
     draw_text_box(0, 92, 240, &FONT_S, "UPDATE", C_WHITE, 1);
     if (step < 9u) {
@@ -212,9 +222,6 @@ static void ota_commit(const uint8_t *parm)
 #include "recovery.c"        /* early, polled USB updater; no synth or settings */
 #endif
 #include "splash.c"          /* SLOOP boot logo (build/gen/sloop_logo.h) */
-#ifndef MAKKURO37
-#define MAKKURO37 0
-#endif
 #if MAKKURO37
 #include "makkuro_splash.c"  /* animated MAKKURO37 boot splash instead of the logo */
 #endif
