@@ -2,15 +2,17 @@
  * Copyright (C) 2026 M. Geisler (makkuro) <mcgeisler@gmail.com> */
 /* MAKKURO37 boot splash and update screens (build flag MAKKURO37): a neon doghouse whose roof is a piano
  * keyboard, a Tron-style dog asleep on the ridge, a synthwave sun and a scrolling grid, the rainbow title in
- * a rounded neon-tube font. All procedural, fixed point, no bitmaps.
+ * a rounded neon-tube font. All procedural, fixed point, no bitmaps: a small 3D renderer (one camera for
+ * the floor, the house, the keys and the dog; flat-shaded faces back to front, glowing edges, a reflection
+ * in the floor).
  *
  * Everything is a function of the time t (ms): eased (easeOutExpo / easeOutCubic), sprung (a damped spring
  * table) and staggered. The intro (MK_LEN): CRT power-on, the sun rises and the grid rushes in, the house
- * draws itself, the 12 roof keys drop in with a bounce (each landing flashes its pad), the dog falls onto the
- * ridge (squash and stretch), the title lights letter by letter (flicker, RGB split, a shine sweep, a
+ * flies in from far away turning, the 12 roof keys drop in with a bounce (each landing flashes its pad), the
+ * dog falls onto the ridge (squash and stretch), the title lights letter by letter (flicker, RGB split, a shine sweep, a
  * starburst), CRT power-off. Under it all the jingle (makkuro_jingle.c) glides from a cluster into a chord
  * that blooms as the dog lands (the pads swell with it). A key, pad or button press ends it at once (the
- * jingle fades out in 150 ms).
+ * jingle fades out in 150 ms). A slow dolly at the end. The pads and the button LEDs light along.
  *
  * A frame is rendered in five strips of 240 x 48 px into the two halves of the canvas pool (cv_px, gfx.c),
  * alternately, so one strip renders while the last one goes out (~12 frames/s at 12 MHz SPI).
@@ -20,7 +22,7 @@
 
 #define MK_SH 48                   /* strip rows: 5 strips per frame, 2 strip buffers in cv_px */
 #define MK_LEN 5000u               /* ms */
-#define MK_H 166                   /* the horizon */
+#define MK_NK 12                   /* roof keys */
 #define Q(v) ((v) * 16)            /* pixels -> 1/16 px */
 #define MK_CYAN 0x28DCFFu
 
@@ -162,17 +164,16 @@ static void mk_put(int32_t x, int32_t y, uint32_t c, int32_t i, int32_t w, int m
 /* neon shading at distance e (1/16 px) from the tube's centre line, level lvl (0..256) */
 static void mk_shade(int32_t x, int32_t y, int32_t e, uint32_t c, int32_t lvl, int mode)
 {
-    int32_t i, w = 0;
-    if (e < mk_core) {
-        i = 256;
-        w = (mk_core - e) * mk_hot / mk_core;
-    } else {
-        e -= mk_core;
-        if (e >= mk_glow)
-            return;
-        i = (mk_glow - e) * 256 / mk_glow;
-        i = (i * i >> 8) * 210 >> 8;
-    }
+    int32_t i, w, g = mk_core + mk_glow;
+    if (e >= g)
+        return;
+    w = (mk_core + 8 - e) * 16;                     /* the core, its edge smoothed over a pixel */
+    w = w < 0 ? 0 : w > 256 ? 256 : w;
+    i = (g - e) * 256 / g;                          /* the glow */
+    i = (i * i >> 8) * 200 >> 8;
+    if (w > i)
+        i = w;
+    w = w * mk_hot >> 8;
     if (mk_shine > -9000) {                         /* the shine: a white band sweeping across */
         int32_t s = x + y / 2 - mk_shine;
         s = s < 0 ? -s : s;
@@ -247,24 +248,6 @@ static void mk_line(int32_t ax, int32_t ay, int32_t bx, int32_t by, uint32_t c, 
     }
 }
 
-/* a line drawn from a toward b up to p (0..256) */
-static void mk_grow(int32_t ax, int32_t ay, int32_t bx, int32_t by, int32_t p, uint32_t c, int32_t lvl)
-{
-    if (p > 0)
-        mk_line(ax, ay, ax + (bx - ax) * p / 256, ay + (by - ay) * p / 256, c, lvl, 0);
-}
-
-/* a polyline of n points (1/16 px, x y pairs), closed or open, drawn up to p (0..256) of its segments */
-static void mk_path(const int32_t *pt, int n, int closed, uint32_t c, int32_t lvl, int32_t p)
-{
-    int k, ns = closed ? n : n - 1;
-    int32_t a = p * ns;                             /* segments done, 1/256 */
-    for (k = 0; k < ns && a > 0; k++, a -= 256) {
-        int j = (k + 1) % n;
-        mk_grow(pt[2 * k], pt[2 * k + 1], pt[2 * j], pt[2 * j + 1], a > 256 ? 256 : a, c, lvl);
-    }
-}
-
 /* a filled polygon (1/16 px, even-odd), colour c mixed in by a (256 = solid) */
 static void mk_poly(const int32_t *p, int n, uint32_t c, int32_t a)
 {
@@ -301,16 +284,6 @@ static void mk_poly(const int32_t *p, int n, uint32_t c, int32_t a)
             }
         }
     }
-}
-
-static void mk_quad(int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3,
-                    uint32_t fill, uint32_t line, int32_t lvl)
-{
-    int32_t p[8];
-    p[0] = x0; p[1] = y0; p[2] = x1; p[3] = y1; p[4] = x2; p[5] = y2; p[6] = x3; p[7] = y3;
-    mk_poly(p, 4, fill, 256);
-    if (lvl)
-        mk_path(p, 4, 1, line, lvl, 256);
 }
 
 /* ---- the font: geometric neon tubes (Tron style), strokes on a 20 x 28 grid, every inner corner rounded.
@@ -504,48 +477,70 @@ static void mk_title(uint32_t t)
     }
 }
 
-/* ---- the sky: a synthwave sun rising, a haze over the horizon, twinkling stars */
+/* ---- one camera for everything: position (1/16 unit), pitch, the focal length; the screen's centre at
+ * (120, MK_Y0). World: x right, y up, z away from the camera; the floor is y = 0. */
+#define MK_F 330                   /* px */
+#define MK_Y0 150
+static int32_t mk_cx, mk_cy, mk_cz, mk_sb, mk_cb;  /* (pitch: sin, cos Q15, looking down) */
+static int32_t mk_yh;              /* the horizon row (1/16 px) */
+static int32_t mk_hs, mk_hc, mk_hx, mk_hz;         /* the house: yaw sin, cos (Q15), position (1/16 unit) */
+static uint32_t mk_t;
+
+static void mk_camera(uint32_t t)
+{
+    int32_t p = mk_cubic(mk_prog(t, 3300, 1300)), a;
+    mk_cx = -Q(10) * p / 256;                                    /* the end: a slow dolly in, drifting left */
+    mk_cy = Q(55) - Q(5) * p / 256;
+    mk_cz = mk_ota ? -Q(300) : -Q(245) + Q(24) * p / 256;          /* (the update screens: further back) */
+    a = 1024 * 7 / 360;                                          /* pitch 7 degrees (1024 = a turn) */
+    mk_sb = mkj_sin((uint32_t)a << 22);
+    mk_cb = mkj_sin((uint32_t)(a + 256) << 22);
+    mk_yh = Q(MK_Y0) - MK_F * 16 * mk_sb / mk_cb;
+}
+
+/* ---- the sky: a synthwave sun rising over the horizon, a haze, twinkling stars */
 static void mk_sky(uint32_t t)
 {
     static const uint8_t STARS[] = {34, 52, 70, 88, 200, 44, 186, 98, 50, 140, 226, 128, 140, 58,
-                                    10, 104, 164, 72, 112, 62, 232, 104, 60, 100, 20, 150, 214, 158};
-    int32_t y, x, k, cy, r = 54;
-    cy = 150 + 80 - 80 * mk_cubic(mk_prog(t, 300, 1000)) / 256;
-    for (y = mk_lo(cy - r, mk_y0); y < mk_y1 && y < MK_H; y++) {
-        int32_t d = y - cy, hw = (int32_t)mk_isqrt((uint32_t)(r * r - d * d)), rel = (d + r) * 256 / (2 * r);
+                                    10, 104, 164, 72, 112, 62, 232, 104, 60, 100, 20, 80, 214, 70};
+    int32_t y, x, k, yh = mk_yh >> 4, r = 40, cy = yh + 4 + 60 - 60 * mk_cubic(mk_prog(t, 300, 1000)) / 256;
+    for (y = mk_lo(cy - r, mk_y0); y < mk_y1 && y < yh; y++) {
+        int32_t d = y - cy, hw, rel = (d + r) * 256 / (2 * r);
         uint32_t c;
         if (d >= r)
             break;
-        if (rel > 120) {                                         /* the stripes, wider toward the bottom */
-            int32_t ph = (y - (cy - r)) % 9;
-            if (ph < (rel - 120) * 6 / 136)
-                continue;
-        }
-        c = rel < 128 ? (0xFFE03Cu & 0xFF0000u) | (uint32_t)(224 - rel * 120 / 128) << 8 | (uint32_t)(60 - rel * 30 / 128)
+        hw = (int32_t)mk_isqrt((uint32_t)(r * r - d * d));
+        if (rel > 120 && (y - (cy - r)) % 8 < (rel - 120) * 5 / 136)
+            continue;                                            /* the stripes, wider toward the bottom */
+        c = rel < 128 ? 0xFF0000u | (uint32_t)(224 - rel * 120 / 128) << 8 | (uint32_t)(60 - rel * 30 / 128)
                       : 0xFF0000u | (uint32_t)(104 - (rel - 128) * 80 / 128) << 8 | (uint32_t)(30 + (rel - 128) * 140 / 128);
-        for (x = mk_lo(128 - hw, 0); x <= mk_hi(128 + hw, 239); x++)
-            mk_put(x, y, c, 200, 0, 0);
+        for (x = mk_lo(176 - hw, 0); x <= mk_hi(176 + hw, 239); x++)
+            mk_put(x, y, c, 180, 0, 0);
     }
     for (k = 0; k < (int)sizeof STARS; k += 2) {
         int32_t i = 128 + (mk_sin((int32_t)t * (2 + k % 3) / 3 + k * 97) >> 1);
+        if (STARS[k + 1] >= yh)
+            continue;
         mk_put(STARS[k], STARS[k + 1], 0xC8C8FF, i, 0, 0);
-        mk_put(STARS[k] + 1, STARS[k + 1], 0xC8C8FF, i / 3, 0, 0);
-        mk_put(STARS[k] - 1, STARS[k + 1], 0xC8C8FF, i / 3, 0, 0);
-        mk_put(STARS[k], STARS[k + 1] + 1, 0xC8C8FF, i / 3, 0, 0);
-        mk_put(STARS[k], STARS[k + 1] - 1, 0xC8C8FF, i / 3, 0, 0);
+        mk_put(STARS[k] + 1, STARS[k + 1], 0xC8C8FF, i / 4, 0, 0);
+        mk_put(STARS[k] - 1, STARS[k + 1], 0xC8C8FF, i / 4, 0, 0);
+        mk_put(STARS[k], STARS[k + 1] + 1, 0xC8C8FF, i / 4, 0, 0);
+        mk_put(STARS[k], STARS[k + 1] - 1, 0xC8C8FF, i / 4, 0, 0);
     }
 }
 
-/* ---- the floor: a magenta perspective grid rushing in from the horizon, then scrolling toward the viewer */
+/* ---- the floor: a magenta grid (24 units) seen by the camera, rushing in from the horizon, then scrolling
+ * toward the viewer. Per row: the depth hit and the x step; anti-aliased lines by their screen distance. */
+#define MK_G Q(30)
 static void mk_floor(uint32_t t)
 {
-    int32_t y, x, rush = mk_expo(mk_prog(t, 300, 1000)), ext = MK_H + 1 + (240 - MK_H) * rush / 256;
-    int32_t phase = ((int32_t)(t * 256u / 520u) + 256 * 5 * rush / 256) & 255;
-    for (y = mk_lo(MK_H - 16, mk_y0); y < mk_y1; y++) {
+    int32_t y, x, rush = mk_expo(mk_prog(t, 300, 1000)), yh = mk_yh >> 4;
+    int32_t ext = yh + 1 + (240 - yh) * rush / 256, phase = (int32_t)(t * (uint32_t)MK_G / 600u) % MK_G;
+    for (y = mk_lo(yh - 14, mk_y0); y < mk_y1; y++) {
         uint16_t *row = mk_buf + (y - mk_y0) * 240;
-        int32_t dy, s, fr, ph, ppu, lvl;
-        if (y < MK_H) {                                     /* haze */
-            uint32_t k = (uint32_t)(16 - (MK_H - y)) * 16u * (uint32_t)rush / 256u;
+        int32_t v, d, dn, z, zn, dz, r, fz, pz, lvl, sx, xw;
+        if (y < yh) {                                            /* haze over the horizon */
+            uint32_t k = (uint32_t)(14 - (yh - y)) * 18u * (uint32_t)rush / 256u;
             uint32_t c = mk_scale(0x5A0A78, k * k >> 8);
             for (x = 0; x < 240; x++)
                 mk_put(x, y, c, 256, 0, 0);
@@ -553,338 +548,586 @@ static void mk_floor(uint32_t t)
         }
         if (y > ext)
             break;
-        dy = Q(y) + 8 - Q(MK_H);
-        lvl = dy * 256 / Q(240 - MK_H);
-        lvl = 50 + (lvl * lvl >> 8) * 206 / 256;
-        s = 110 * 16 * 256 / dy + phase;                    /* depth of this row, 1/256 grid unit */
-        fr = s & 255;
-        fr = fr < 128 ? fr : 256 - fr;
-        ph = fr * dy / 16 * dy / (256 * 110);               /* distance to the nearest cross line, 1/16 px */
-        ppu = dy * 90 >> 8;                                  /* 1/16 px per grid unit along x */
-        if (y == MK_H)
-            ph = 0;
-        for (x = 0; x < 240; x++) {
-            int32_t fx = ((Q(x) + 8 - Q(120)) * 256 / ppu) & 255, pd, i;
-            fx = fx < 128 ? fx : 256 - fx;
-            pd = fx * ppu >> 8;
-            if (ph < pd)
-                pd = ph;
+        v = Q(MK_Y0) - (Q(y) + 8);
+        d = (MK_F * 16 * mk_sb - v * mk_cb) >> 12;               /* -(the ray's y), the next row's */
+        dn = (MK_F * 16 * mk_sb - (v - 16) * mk_cb) >> 12;
+        if (d < 24)
+            continue;
+        z = mk_cz + mk_cy * ((v * mk_sb + MK_F * 16 * mk_cb) >> 12) / d;
+        zn = mk_cz + mk_cy * (((v - 16) * mk_sb + MK_F * 16 * mk_cb) >> 12) / dn;
+        dz = z - zn;                                             /* depth per pixel row */
+        if (dz < 1)
+            dz = 1;
+        r = (mk_cy << 11) / d;                                   /* x: (x - 120) * r / 256, 1/16 unit per 1/16 px */
+        fz = ((z + phase) % MK_G + MK_G) % MK_G;
+        fz = fz < MK_G / 2 ? fz : MK_G - fz;
+        pz = fz * 16 / dz;                                       /* 1/16 px to the nearest cross line */
+        lvl = (y - yh) * 256 / (240 - yh);
+        lvl = 24 + (lvl * (512 - lvl) >> 9) * 210 / 128;
+        if (lvl > 256)
+            lvl = 256;
+        sx = r >> 4;                                             /* 1/16 unit per pixel */
+        if (sx < 1)
+            sx = 1;
+        xw = mk_cx + (((Q(0) + 8 - Q(120)) * r) >> 8);
+        for (x = 0; x < 240; x++, xw += sx) {
+            int32_t fx = (xw % MK_G + MK_G) % MK_G, pd, i;
+            fx = fx < MK_G / 2 ? fx : MK_G - fx;
+            pd = fx * 16 / sx;
+            if (pz < pd)
+                pd = pz;
             if (pd >= 40)
                 continue;
-            i = pd < 9 ? 256 : (40 - pd) * 256 / 31;
-            i = pd < 9 ? 256 : (i * i >> 8) * 170 >> 8;
+            i = pd < 8 ? 256 : (40 - pd) * 256 / 32;
+            i = pd < 8 ? 256 - pd * 8 : (i * i >> 8) * 180 >> 8;
             row[x] = 0;
-            mk_put(x, y, 0xFF32C8, i * lvl >> 8, pd < 6 ? 60 * lvl >> 8 : 0, 0);
+            mk_put(x, y, 0xFF32C8, i * lvl >> 8, pd < 8 ? (8 - pd) * 8 * lvl >> 8 : 0, 0);
         }
     }
 }
 
-/* ---- hexagons, waveforms */
-static void mk_hex(int32_t cx, int32_t cy, int32_t r, uint32_t c, int32_t lvl)
+/* ---- the scene's mesh, built each frame in house-local coordinates (1/16 unit), then seen by the camera
+ * twice: mirrored in the floor (pass 0: the reflection) and as is (pass 1). Faces are convex polygons, wound
+ * outward when built (from a point inside), culled by their screen winding, flat shaded, drawn back to front
+ * within groups (walls, roof, keys, dog) with glowing edges. Memory: past the strip buffers in the pool. */
+#define MK_NV 340
+#define MK_NFW 2100                /* face words */
+#define MK_NL 230                  /* visible faces per pass */
+enum { G_WALL, G_ROOF, G_KEY, G_DOG };
+#define MK_VIS(pass, a) ((pass) ? (a) > 0 : (a) < 0)      /* a face's screen winding: it faces the camera */
+enum { S_WALL, S_ROOF, S_KEY, S_BLACK, S_DOG, S_EAR, S_DOOR, S_GABLE };
+static const uint32_t MK_SFILL[] = {0x1A2050, 0x2C0C3C, 0, 0x0A0814, 0x0E1428, 0x160C24, 0x000000, 0x1A2050};
+static const uint32_t MK_SEDGE[] = {MK_CYAN, 0xFF34C8, 0, 0x8058C8, MK_CYAN, 0x70F4FF, MK_CYAN, MK_CYAN};
+static const uint8_t MK_SCORE[] = {13, 12, 8, 6, 9, 9, 13, 13};   /* edge core, 1/16 px */
+static int16_t *mk_lv;             /* local vertices x y z */
+static int16_t *mk_sv[2];          /* screen x y (1/16 px), per pass */
+static int16_t *mk_sz;             /* the camera depth of the pass being built */
+static uint16_t *mk_fd;            /* faces: hdr (n | style << 4 | key << 8 | group << 12), edge mask (2 bits an
+                                    * edge: 1 dim, 2 bright), normal x y (bytes), z, the vertices */
+static uint16_t *mk_lo_[2], *mk_lc[2];             /* visible faces back to front: word offset, fill (565) */
+static uint8_t *mk_ll[2];                          /* their edge level */
+static int16_t *mk_lz;                             /* (sorting) */
+static uint16_t mk_nv, mk_nfw, mk_nl[2];
+static uint16_t mk_vtail[3], mk_veye[3], mk_vnose, mk_vhead, mk_froof, mk_fneck;
+static int32_t mk_kdy[MK_NK + 1];                   /* the keys' drop, 1/16 unit (MK_NK: the black keys) */
+static uint16_t mk_kflash[MK_NK];
+
+static void mk_mem(uint16_t *m)    /* 6720 words */
 {
-    int32_t p[12], h = r * 222 >> 8;
-    cx = Q(cx);
-    cy = Q(cy);
-    r = Q(r);
-    h = Q(h);
-    p[0] = cx + r; p[1] = cy;
-    p[2] = cx + r / 2; p[3] = cy + h;
-    p[4] = cx - r / 2; p[5] = cy + h;
-    p[6] = cx - r; p[7] = cy;
-    p[8] = cx - r / 2; p[9] = cy - h;
-    p[10] = cx + r / 2; p[11] = cy - h;
-    mk_path(p, 6, 1, c, lvl, 256);
+    mk_lv = (int16_t *)m;
+    m += 3 * MK_NV;
+    mk_sv[0] = (int16_t *)m;
+    m += 2 * MK_NV;
+    mk_sv[1] = (int16_t *)m;
+    m += 2 * MK_NV;
+    mk_sz = (int16_t *)m;
+    m += MK_NV;
+    mk_fd = m;
+    m += MK_NFW;
+    mk_lo_[0] = m;
+    m += MK_NL;
+    mk_lo_[1] = m;
+    m += MK_NL;
+    mk_lc[0] = m;
+    m += MK_NL;
+    mk_lc[1] = m;
+    m += MK_NL;
+    mk_lz = (int16_t *)m;
+    m += MK_NL;
+    mk_ll[0] = (uint8_t *)m;
+    mk_ll[1] = (uint8_t *)m + MK_NL;
 }
 
-static void mk_wave(int32_t x0, int32_t x1, int32_t cy, uint32_t h0, uint32_t t, int32_t seed, int32_t amp)
+static int mk_v(int32_t x, int32_t y, int32_t z)
 {
-    int32_t px = 0, py = 0, x;
-    if (cy + 30 < mk_y0 || cy - 30 >= mk_y1 || amp <= 0)
-        return;
-    for (x = x0; x <= x1; x += 3) {
-        int32_t k = (x - x0) * 1024 / (x1 - x0), env, a, y;
-        env = mk_sin(k / 2) * amp >> 8;                     /* 0 at the ends */
-        env = env * (200 + (mk_sin((int32_t)(t / 3u) + seed) >> 2)) >> 8;
-        a = mk_sin(x * 37 - (int32_t)t / 2 + seed);
-        a = mk_sin(x * 150 + seed + (int32_t)t) * (a < 0 ? -a : a) >> 8;
-        y = Q(cy) - a * env * 5 / 1024;
-        if (x > x0)
-            mk_line(px, py, Q(x), y, mk_hue(h0 + (uint32_t)(x - x0) * 9u), 230, 0);
-        px = Q(x);
-        py = y;
+    if (mk_nv >= MK_NV)
+        return MK_NV - 1;
+    mk_lv[3 * mk_nv] = (int16_t)x;
+    mk_lv[3 * mk_nv + 1] = (int16_t)y;
+    mk_lv[3 * mk_nv + 2] = (int16_t)z;
+    return mk_nv++;
+}
+
+/* a face of n vertices; ra, rb: two vertices whose midpoint is inside the solid (it sets the winding) */
+static uint32_t mk_face(const uint16_t *vi, int n, uint32_t hdr, uint32_t emask, int ra, int rb)
+{
+    int32_t nx = 0, ny = 0, nz = 0, cx = 0, cy = 0, cz = 0, k, len;
+    uint32_t off = mk_nfw;
+    if (mk_nfw + 4u + (uint32_t)n > MK_NFW)
+        return 0;
+    for (k = 0; k < n; k++) {
+        const int16_t *a = mk_lv + 3 * vi[k], *b = mk_lv + 3 * vi[(k + 1) % n];
+        nx += (a[1] - b[1]) * (a[2] + b[2]) >> 4;
+        ny += (a[2] - b[2]) * (a[0] + b[0]) >> 4;
+        nz += (a[0] - b[0]) * (a[1] + b[1]) >> 4;
+        cx += a[0];
+        cy += a[1];
+        cz += a[2];
     }
+    while (nx > 20000 || nx < -20000 || ny > 20000 || ny < -20000 || nz > 20000 || nz < -20000) {
+        nx /= 2;
+        ny /= 2;
+        nz /= 2;
+    }
+    cx = cx / n - (mk_lv[3 * ra] + mk_lv[3 * rb]) / 2;
+    cy = cy / n - (mk_lv[3 * ra + 1] + mk_lv[3 * rb + 1]) / 2;
+    cz = cz / n - (mk_lv[3 * ra + 2] + mk_lv[3 * rb + 2]) / 2;
+    len = (int32_t)mk_isqrt((uint32_t)(nx * nx + ny * ny + nz * nz));
+    if (!len)
+        return 0;
+    if (nx * (cx >> 4) + ny * (cy >> 4) + nz * (cz >> 4) < 0) {   /* inward: reverse it */
+        uint32_t m = emask & (3u << (2 * (n - 1))), j;
+        for (j = 0; j + 1 < (uint32_t)n; j++)
+            m |= ((emask >> (2 * (n - 2 - j))) & 3u) << (2 * j);
+        if (n <= 8)
+            emask = m;
+        nx = -nx;
+        ny = -ny;
+        nz = -nz;
+        for (k = 0; k < n; k++)
+            mk_fd[off + 4 + k] = vi[n - 1 - k];
+    } else
+        for (k = 0; k < n; k++)
+            mk_fd[off + 4 + k] = vi[k];
+    mk_fd[off] = (uint16_t)(hdr | (uint32_t)n);
+    mk_fd[off + 1] = (uint16_t)emask;
+    mk_fd[off + 2] = (uint16_t)((uint8_t)(nx * 127 / len) | (uint32_t)(uint8_t)(ny * 127 / len) << 8);
+    mk_fd[off + 3] = (uint16_t)(uint8_t)(nz * 127 / len);
+    mk_nfw = (uint16_t)(off + 4u + (uint32_t)n);
+    return off;
+}
+#define MK_HDR(style, key, group) ((uint32_t)(style) << 4 | (uint32_t)(key) << 8 | (uint32_t)(group) << 12)
+
+static uint32_t mk_quadf(int a, int b, int c, int d, uint32_t hdr, uint32_t emask, int ra, int rb)
+{
+    uint16_t q[4];
+    q[0] = (uint16_t)a; q[1] = (uint16_t)b; q[2] = (uint16_t)c; q[3] = (uint16_t)d;
+    return mk_face(q, 4, hdr, emask, ra, rb);
 }
 
-static void mk_deco(uint32_t t)
+/* a box from 8 corners (c[0..3] the bottom ring, c[4..7] the top ring), all but the bottom */
+static void mk_box(const int *c, uint32_t hdr, uint32_t emask)
 {
-    int32_t a = mk_cubic(mk_prog(t, 1200, 700));
-    mk_core = 10;
-    mk_glow = 28;
-    mk_wave(2, 50, 118, 1280, t, 0, a);
-    mk_wave(190, 238, 118, 600, t, 333, a);
-    mk_core = 11;
-    mk_glow = 34;
-    mk_hex(20, 200, 13 * a / 256, 0xFFDC28, 180 + (mk_sin((int32_t)t / 2) * 60 >> 8));
-    mk_hex(222, 204, 11 * a / 256, 0x50FF5A, 180 + (mk_sin((int32_t)t / 2 + 400) * 60 >> 8));
-    mk_hex(224, 66, 7 * a / 256, 0xFF3CDC, 180 + (mk_sin((int32_t)t / 2 + 700) * 60 >> 8));
-    mk_hex(16, 68, 6 * a / 256, 0x28DCFF, 180 + (mk_sin((int32_t)t / 2 + 200) * 60 >> 8));
+    int k;
+    mk_quadf(c[4], c[5], c[6], c[7], hdr, emask, c[0], c[6]);
+    for (k = 0; k < 4; k++)
+        mk_quadf(c[k], c[(k + 1) & 3], c[4 + ((k + 1) & 3)], c[4 + k], hdr, emask, c[0], c[6]);
 }
 
-/* ---- the doghouse: front face (x 56..118, y 148..208, apex 87,110), side wall back by V = (62, -14); its
- * lines draw themselves one after the other */
-#define MK_VX 62
-#define MK_VY (-14)
-#define MK_NK 12                   /* roof keys */
-static const uint8_t MK_HL[] = {   /* x0 y0 x1 y1 */
-    56, 208, 56, 148,   56, 208, 118, 208,  118, 208, 118, 148, 118, 208, 180, 194,  180, 194, 180, 132,
-    87, 105, 44, 153,   87, 112, 52, 155,   44, 153, 52, 155,
-    56, 163, 118, 163,  118, 163, 180, 149, 56, 178, 72, 178,   102, 178, 118, 178, 118, 178, 180, 164,
-    56, 193, 72, 193,   102, 193, 118, 193, 118, 193, 180, 179,
-};
-
-static void mk_house(uint32_t t)
+/* the doghouse: walls 56 x 72 x 36 in four plank strips, gables to 60, an arched door, a roof of two
+ * 3-unit slabs from the ridge (61) over the eaves (32, 5 out) */
+static void mk_house_mesh(void)
 {
-    int32_t k, face = mk_cubic(mk_prog(t, 1300, 500));
-    if (mk_y0 > 212 || mk_y1 < 90 || t < 900u)
-        return;
-    mk_core = 13;
-    mk_glow = 34;
+    static const int8_t COL[4][2] = {{-28, -36}, {28, -36}, {28, 36}, {-28, 36}};
+    static const int8_t DOOR[18] = {-10, 0, 10, 0, 10, 12, 9, 17, 5, 21, 0, 22, -5, 21, -9, 17, -10, 12};
+    int w[4][5], c, j, ctr = mk_v(0, Q(30), 0), af, ab;
+    uint16_t d[9];
+    for (c = 0; c < 4; c++)
+        for (j = 0; j < 5; j++)
+            w[c][j] = mk_v(Q(COL[c][0]), Q(9 * j), Q(COL[c][1]));
+    for (c = 0; c < 4; c++)
+        for (j = 0; j < 4; j++)
+            mk_quadf(w[c][j], w[(c + 1) & 3][j], w[(c + 1) & 3][j + 1], w[c][j + 1], MK_HDR(S_WALL, 0, G_WALL),
+                     (j ? 1u : 2u) | 2u << 2 | (j == 3 ? 2u : 0u) << 4 | 2u << 6, ctr, ctr);
+    af = mk_v(0, Q(60), Q(-36));
+    ab = mk_v(0, Q(60), Q(36));
     {
-        int32_t f[10] = {Q(56), Q(148), Q(87), Q(110), Q(118), Q(148), Q(118), Q(208), Q(56), Q(208)},
-                s[8] = {Q(118), Q(148), Q(118 + MK_VX), Q(148 + MK_VY), Q(118 + MK_VX), Q(208 + MK_VY), Q(118), Q(208)},
-                b[8] = {Q(87), Q(105), Q(87), Q(112), Q(52), Q(155), Q(44), Q(153)};
-        mk_poly(f, 5, 0x0C0820, face);
-        mk_poly(s, 4, 0x0A0618, face);
-        mk_poly(b, 4, 0x300828, face);
+        uint16_t g[3];
+        g[0] = (uint16_t)w[0][4]; g[1] = (uint16_t)w[1][4]; g[2] = (uint16_t)af;
+        mk_face(g, 3, MK_HDR(S_GABLE, 0, G_WALL), 1u << 2 | 1u << 4, ctr, ctr);
+        g[0] = (uint16_t)w[2][4]; g[1] = (uint16_t)w[3][4]; g[2] = (uint16_t)ab;
+        mk_face(g, 3, MK_HDR(S_GABLE, 0, G_WALL), 1u << 2 | 1u << 4, ctr, ctr);
     }
-    {   /* the door: black, an arch */
-        int32_t d[18] = {Q(72), Q(208), Q(72), Q(180), Q(74), 2780, Q(79) + 8, Q(167), Q(87), Q(165),
-                         Q(94) + 8, Q(167), Q(100), 2780, Q(102), Q(180), Q(102), Q(208)};
-        mk_poly(d, 9, 0, face);
-        mk_path(d, 9, 0, MK_CYAN, 240, mk_cubic(mk_prog(t, 1150, 600)));
-    }
-    for (k = 0; k < (int)sizeof MK_HL / 4; k++) {
-        const uint8_t *l = MK_HL + 4 * k;
-        mk_grow(Q(l[0]), Q(l[1]), Q(l[2]), Q(l[3]), mk_cubic(mk_prog(t, 900u + (uint32_t)k * 40u, 380u)),
-                k >= 5 && k < 8 ? 0xFF30C8 : MK_CYAN, k >= 8 ? 170 : 256);
-    }
-}
-
-/* the roof: key i (0 = front) from the ridge (s = 0) to the eave (s = 256), u in 1/256 key */
-static void mk_roof_pt(int32_t *p, int32_t u, int32_t s, int32_t dy)
-{
-    p[0] = Q(87) + Q(40) * s / 256 + Q(MK_VX) * u / (256 * MK_NK);
-    p[1] = Q(110) + Q(44) * s / 256 + Q(MK_VY) * u / (256 * MK_NK) + dy;
-}
-
-#define MK_K0 1600u                /* the first key's drop */
-#define MK_KD 100u                 /* between keys */
-static uint32_t mk_key_col(int32_t k, uint32_t t)
-{
-    return mk_hue(1350u + 1536u * 4u - ((uint32_t)k * 1350u / (MK_NK - 1) + (t > 3000u ? (t - 3000u) / 3u : 0u)) % 1536u);
-}
-
-static void mk_roof(uint32_t t)
-{
-    int32_t a[2], b[2], c[2], d[2], k, lit = MK_NK;
-    if (mk_y0 > 165 || mk_y1 < 20)
-        return;
-    if (mk_ota)
-        lit = mk_step >= 5u ? MK_NK : mk_step * MK_NK / 5;
-    mk_core = 9;
-    mk_glow = 24;
-    for (k = 0; k < MK_NK; k++) {
-        uint32_t t0 = MK_K0 + (uint32_t)k * MK_KD, col = mk_key_col(k, t);
-        int32_t dy = 0, lvl = 200, fl;
-        if (!mk_ota && t < t0)
-            continue;
-        if (!mk_ota) {
-            int32_t s = 256 - mk_spring(t - t0);
-            dy = -Q(70) * (s < 0 ? -s : s) / 256;                /* falls, bounces */
-            fl = t - t0 >= MK_LAND ? 256 - mk_prog(t, t0 + MK_LAND, 260u) : 0;
-            lvl += fl * 56 / 256;                                 /* the landing flash */
-        } else {
-            fl = 0;
-            if (mk_step == 9u && mk_code != 1)
-                col = 0xFF2020;
-            if (k >= lit) {
-                col = 0x404060;
-                lvl = 120;
-            }
-        }
-        mk_roof_pt(a, k * 256 + 22, 0, dy);
-        mk_roof_pt(b, k * 256 + 234, 0, dy);
-        mk_roof_pt(c, k * 256 + 234, 256, dy);
-        mk_roof_pt(d, k * 256 + 22, 256, dy);
-        mk_quad(d[0], d[1], c[0], c[1], c[0], c[1] + 80, d[0], d[1] + 80, mk_scale(col, 70), col, lvl * 3 / 4);
-        mk_quad(a[0], a[1], b[0], b[1], c[0], c[1], d[0], d[1],
-                mk_scale(col, 50 + (uint32_t)lvl / 5 + (uint32_t)fl * 3 / 4), col, lvl);
-    }
-    for (k = 0; k + 1 < MK_NK; k++) {                         /* black keys: C# D#, F# G# A# */
-        int n = k % 7;
-        uint32_t t1 = MK_K0 + (uint32_t)(k + 1) * MK_KD + MK_LAND;
-        if (n == 2 || n == 6 || (!mk_ota && t < t1))
-            continue;
-        mk_roof_pt(a, (k + 1) * 256 - 70, 20, 0);
-        mk_roof_pt(b, (k + 1) * 256 + 70, 20, 0);
-        mk_roof_pt(c, (k + 1) * 256 + 70, 150, 0);
-        mk_roof_pt(d, (k + 1) * 256 - 70, 150, 0);
-        {
-            int32_t q[8] = {a[0], a[1], b[0], b[1], c[0], c[1], d[0], d[1]};
-            mk_poly(q, 4, 0x06030A, mk_ota ? 256 : mk_cubic(mk_prog(t, t1, 200u)));
-        }
-    }
-}
-
-/* ---- the dog: an original Tron-style beagle asleep on the ridge: a dark body drawn by its glowing edge,
- * a few inner facet lines, a neon collar. Local units: u along the ridge, v up (x 1.125). */
-#define MK_DOX 100                 /* origin on the ridge */
-#define MK_DOY 108
-#define MK_DN 26
-static const int8_t MK_DSIL[] = {  /* the silhouette, from the nose over the back to the paws */
-    -38, 10, -36, 14,  -30, 16,  -22, 18,  -18, 25,  -9, 29,  0, 27,   5, 21,   10, 18,  15, 22,
-    28, 21,  40, 22,   49, 23,   56, 18,   59, 10,   65, 3,   65, -2,  46, -2,  32, 0,   14, -1,
-    6, -2,   -36, -2,  -39, 1,   -36, 4,   -28, 5,   -34, 7,
-};
-static const int8_t MK_DFACET[] = { /* inner lines: pairs of points */
-    -30, 16, -26, 10,  -26, 10, -34, 7,   -28, 5, -8, 3,    15, 22, 19, 9,   19, 9, 14, -1,
-    19, 9, 35, 11,     28, 21, 35, 11,    35, 11, 46, 11,   49, 23, 46, 11,  46, 11, 51, 3,
-    51, 3, 59, 10,
-};
-static int32_t mk_dsu = 256, mk_dsv = 256, mk_ddy;  /* squash and stretch (1/256), drop (1/16 px) */
-
-static void mk_dpt(int32_t *p, int32_t u, int32_t v)       /* u, v in 1/16 px */
-{
-    u = u * 18 / 16 * mk_dsu / 256;
-    v = v * 18 / 16 * mk_dsv / 256;
-    p[0] = Q(MK_DOX) + (u * 250 - v * 56) / 256;          /* the ridge rises 14 px per 62: cos 250, sin 56 */
-    p[1] = Q(MK_DOY) + (-u * 56 - v * 250) / 256 + mk_ddy;
-}
-
-/* mood: 0 asleep, 1 awake (eye open, ear up, tail up), 2 sad */
-static void mk_dog(uint32_t t, int mood, int32_t ear, int32_t wag)
-{
-    int32_t pt[MK_DN * 2], k, q[4];
-    if (mk_y0 > 132 + mk_ddy / 16 || mk_y1 < 40 + mk_ddy / 16)
-        return;
-    for (k = 0; k < MK_DN; k++)
-        mk_dpt(pt + 2 * k, Q(MK_DSIL[2 * k]), Q(MK_DSIL[2 * k + 1]));
-    mk_poly(pt, MK_DN, 0x03050C, 256);
-    mk_core = 8;
-    mk_glow = 20;
-    for (k = 0; k < (int)sizeof MK_DFACET; k += 4) {          /* the facets, dim */
-        mk_dpt(q, Q(MK_DFACET[k]), Q(MK_DFACET[k + 1]));
-        mk_dpt(q + 2, Q(MK_DFACET[k + 2]), Q(MK_DFACET[k + 3]));
-        mk_line(q[0], q[1], q[2], q[3], 0x1890C8, 150, 0);
-    }
-    mk_dpt(q, Q(19), Q(9));                                    /* circuit nodes */
-    mk_line(q[0], q[1], q[0], q[1], 0xC0F8FF, 256, 0);
-    mk_dpt(q, Q(46), Q(11));
-    mk_line(q[0], q[1], q[0], q[1], 0xC0F8FF, 256, 0);
-    {   /* tail: a neon curve, a bright tip */
-        int32_t a[2], b[2], c[2], up = mood == 2 ? -Q(14) : mood == 1 ? Q(6) : 0;
-        mk_dpt(a, Q(55), Q(18));
-        mk_dpt(b, Q(61) + wag / 2, Q(26) + up / 2);
-        mk_dpt(c, Q(63) + wag, Q(35) + up);
-        mk_core = 14;
-        mk_glow = 32;
-        mk_line(a[0], a[1], b[0], b[1], MK_CYAN, 256, 0);
-        mk_line(b[0], b[1], c[0], c[1], MK_CYAN, 256, 0);
-        mk_core = 22;
-        mk_line(c[0], c[1], c[0], c[1], 0xE0FFFF, 256, 0);
-    }
-    mk_core = 14;
-    mk_glow = 34;
-    mk_path(pt, MK_DN, 1, MK_CYAN, 256, 256);                  /* the edge */
-    {   /* the collar */
-        int32_t a[2], b[2];
-        mk_dpt(a, Q(10), Q(18));
-        mk_dpt(b, Q(12), Q(-1));
-        mk_core = 16;
-        mk_glow = 30;
-        mk_line(a[0], a[1], b[0], b[1], 0xFF30C8, 256, 0);
-        mk_dpt(a, Q(13), Q(-4));
-        mk_core = 22;
-        mk_line(a[0], a[1], a[0], a[1], 0xFFD040, 256, 0);
-    }
-    {   /* the floppy ear: dark, a neon edge; up when awake */
-        static const int8_t E[] = {-8, 27, -3, 26, 0, 18, 0, 7, -3, 0, -9, -1, -13, 4, -12, 15};
-        int32_t ep[16];
+    for (j = 0; j < 9; j++)
+        d[j] = (uint16_t)mk_v(Q(DOOR[2 * j]), Q(DOOR[2 * j + 1]), Q(-36) - 3);
+    mk_face(d, 9, MK_HDR(S_DOOR, 0, G_WALL), 0xFFFFu, ctr, ctr);
+    for (c = -1; c <= 1; c += 2) {                   /* the roof slabs */
+        int s[8], k;
         for (k = 0; k < 8; k++) {
-            int32_t u = E[2 * k], v = E[2 * k + 1], sw = (27 - v) * ear / 28;
-            if (mood == 1) {                                   /* ear up, flipped back */
-                u = -3 + (u + 5) / 2 + (27 - v) * 3 / 4;
-                v = 27 + (27 - v) * 2 / 3;
-                sw = 0;
-            } else if (mood == 2)
-                u -= (27 - v) / 4;
-            mk_dpt(ep + 2 * k, Q(u) + sw, Q(v));
+            int32_t sl = k & 1 ? Q(44) : 0, h = k & 4 ? 0 : -Q(3), z = k & 2 ? Q(41) : -Q(41);
+            s[k] = mk_v(c * (sl * 192 + h * 169) / 256, Q(61) + (-sl * 169 + h * 192) / 256, z);
         }
-        mk_poly(ep, 8, 0x0A0C18, 256);
-        mk_core = 14;
-        mk_glow = 30;
-        mk_path(ep, 8, 1, 0x60F0FF, 256, 256);
+        /* (k: bit 0 eave, bit 1 back, bit 2 top) */
+        j = (int)mk_quadf(s[4], s[5], s[7], s[6], MK_HDR(S_ROOF, 0, G_ROOF), 0xAAu, s[0], s[7]);
+        if (c > 0)
+            mk_froof = (uint16_t)j;
+        mk_quadf(s[5], s[1], s[3], s[7], MK_HDR(S_ROOF, 0, G_ROOF), 0xAAu, s[0], s[7]);
+        mk_quadf(s[4], s[0], s[1], s[5], MK_HDR(S_ROOF, 0, G_ROOF), 0xAAu, s[0], s[7]);
+        mk_quadf(s[6], s[7], s[3], s[2], MK_HDR(S_ROOF, 0, G_ROOF), 0xAAu, s[0], s[7]);
     }
-    {   /* the eye: a visor line when awake, a curve when asleep (down when sad), a nose */
-        int32_t a[2], b[2], c[2];
-        mk_core = 14;
-        mk_glow = 30;
-        mk_hot = 200;
-        if (mood == 1) {
-            mk_dpt(a, -Q(27), Q(21));
-            mk_dpt(b, -Q(18), Q(21));
-            mk_line(a[0], a[1], b[0], b[1], 0xA0F8FF, 256, 0);
-        } else {
-            int32_t m = mood == 2 ? Q(22) : Q(18);
-            mk_dpt(a, -Q(26), Q(20));
-            mk_dpt(b, -Q(22), m);
-            mk_dpt(c, -Q(18), Q(20));
-            mk_line(a[0], a[1], b[0], b[1], 0xA0F8FF, 256, 0);
-            mk_line(b[0], b[1], c[0], c[1], 0xA0F8FF, 256, 0);
-        }
-        mk_dpt(a, -Q(38), Q(11));
-        mk_core = 24;
-        mk_line(a[0], a[1], a[0], a[1], 0xFF50D0, 256, 0);
-        mk_hot = 110;
-    }
-    (void)t;
 }
 
-/* the dog in the intro: falls onto the ridge (stretched), lands (squash, spring), the ear swings, the
- * eyes close */
-#define MK_DF 2750u                /* the fall starts */
-#define MK_DL 2950u                /* lands */
-static void mk_dog_intro(uint32_t t)
+/* a point on the right roof slope: s along it from the ridge, h above it, z (1/16 unit) */
+static int mk_slope(int32_t s, int32_t h, int32_t z, int32_t dy)
 {
-    int32_t ear, wag, sq;
-    if (t < MK_DF)
-        return;
-    if (t < MK_DL) {
-        int32_t p = mk_prog(t, MK_DF, MK_DL - MK_DF);
-        mk_ddy = -Q(150) * (65536 - p * p) / 65536;
-        mk_dsu = 236;
-        mk_dsv = 290;
-        ear = -40;
-    } else {
-        uint32_t s = t - MK_DL;
-        sq = s < 600u ? mk_spring(s + MK_LAND) - 256 : 0;        /* + squash, - stretch */
-        mk_ddy = 0;
-        mk_dsv = 256 - sq * 9 / 10;
-        mk_dsu = 256 + sq * 4 / 10;
-        ear = s < 900u ? mk_sin((int32_t)(s * 1024u / 330u)) * (int32_t)(900u - s) / 900 * 3 / 2 : 0;
-        ear += mk_sin((int32_t)(t * 1024u / 2300u)) * 16 / 256;
+    return mk_v((s * 192 + h * 169) / 256, Q(61) + (-s * 169 + h * 192) / 256 + dy, z);
+}
+
+/* the 12 keys on the right slope (boxes 3 high), the black ones raised between them */
+#define MK_KW (Q(82) / MK_NK)
+static void mk_keys_mesh(void)
+{
+    int k, c[8], j;
+    for (k = 0; k < MK_NK; k++) {
+        int32_t z0 = -Q(41) + k * MK_KW + 5, z1 = z0 + MK_KW - 10, dy = mk_kdy[k];
+        if (dy >= Q(200))
+            continue;
+        for (j = 0; j < 8; j++)
+            c[j] = mk_slope(j == 1 || j == 2 || j == 5 || j == 6 ? Q(43) : Q(3), j & 4 ? Q(3) : 0,
+                            j == 2 || j == 3 || j == 6 || j == 7 ? z1 : z0, dy);
+        mk_box(c, MK_HDR(S_KEY, k, G_KEY), 0xAAu);
     }
-    wag = mk_sin((int32_t)(t * 1024u / (t < MK_DL + 900u ? 300u : 700u))) * 3 / 8;
-    mk_dog(t, t < MK_DL + 500u ? 1 : 0, ear, wag);
+    if (mk_kdy[MK_NK] >= Q(200))
+        return;
+    for (k = 0; k + 1 < MK_NK; k++) {
+        int32_t zm = -Q(41) + (k + 1) * MK_KW;
+        if (k % 7 == 2 || k % 7 == 6)
+            continue;
+        for (j = 0; j < 8; j++)
+            c[j] = mk_slope(j == 1 || j == 2 || j == 5 || j == 6 ? Q(25) : Q(3), j & 4 ? Q(7) : Q(3),
+                            zm + (j == 2 || j == 3 || j == 6 || j == 7 ? 1 : -1) * MK_KW * 3 / 10, mk_kdy[MK_NK]);
+        mk_box(c, MK_HDR(S_BLACK, 0, G_KEY), 0xAAu);
+    }
+}
+
+/* ---- the dog: an original low-poly beagle lying on the ridge, nose to the front: hexagonal rings lofted
+ * into a body and a head, two paws, floppy ears; Tron style (dark faces, glowing edges, brighter where
+ * they turn away). Units; y from the ridge top, squashed and dropped as a whole. */
+static const int8_t MK_BODY[] = {   /* z, centre y, half width, half height */
+    -6, 10, 6, 6,   0, 10, 9, 8,   8, 10, 9, 8,   16, 9, 8, 7,   25, 10, 10, 9,   33, 10, 8, 7,   37, 9, 3, 3,
+};
+static const int8_t MK_HEAD[] = {
+    -8, 14, 7, 7,  -13, 15, 8, 8,  -18, 14, 7, 7,  -21, 12, 5, 5,  -28, 10, 5, 4,  -32, 10, 3, 3,
+};
+static const int8_t MK_PAW[] = {-2, 3, 3, 3,  -29, 3, 3, 2};
+static int32_t mk_dsu = 256, mk_dsv = 256, mk_ddy;  /* squash (x z, y; 1/256), drop (1/16 unit) */
+
+static int mk_dv(int32_t x, int32_t y, int32_t z)  /* dog units (1/16) -> a house vertex */
+{
+    int32_t ymin = -(x < 0 ? -x : x) * 7 / 8;        /* (the belly drapes over the ridge) */
+    if (y < ymin)
+        y = ymin;
+    return mk_v(x * mk_dsu / 213, Q(62) + y * mk_dsv / 213 + mk_ddy, Q(-6) + z * mk_dsu / 213);   /* (x 1.2) */
+}
+
+static void mk_tube(const int8_t *r, int nr, int32_t ox, int sty)
+{
+    int i, k, base = mk_nv;
+    for (i = 0; i < nr; i++) {
+        int32_t z = Q(r[4 * i]), yc = Q(r[4 * i + 1]), hw = Q(r[4 * i + 2]), hh = Q(r[4 * i + 3]);
+        mk_dv(ox, yc + hh, z);
+        mk_dv(ox + hw * 7 / 8, yc + hh / 2, z);
+        mk_dv(ox + hw * 7 / 8, yc - hh / 2, z);
+        mk_dv(ox, yc - hh, z);
+        mk_dv(ox - hw * 7 / 8, yc - hh / 2, z);
+        mk_dv(ox - hw * 7 / 8, yc + hh / 2, z);
+    }
+    for (i = 0; i + 1 < nr; i++)
+        for (k = 0; k < 6; k++) {
+            uint32_t f = mk_quadf(base + 6 * i + k, base + 6 * i + (k + 1) % 6, base + 6 * (i + 1) + (k + 1) % 6,
+                                  base + 6 * (i + 1) + k, MK_HDR(sty, 0, G_DOG), 0x55u, base + 6 * i,
+                                  base + 6 * (i + 1) + 3);
+            if (!i && sty == S_DOG && !ox && mk_fneck == 0xFFFFu)
+                mk_fneck = (uint16_t)f;
+        }
+    for (i = 0; i < 2; i++) {                        /* the end caps */
+        uint16_t c[6];
+        int ring = i ? nr - 1 : 0, in = i ? nr - 2 : 1;
+        for (k = 0; k < 6; k++)
+            c[k] = (uint16_t)(base + 6 * ring + k);
+        mk_face(c, 6, MK_HDR(sty, 0, G_DOG), 0x555u, base + 6 * ring, base + 6 * in + 3);
+    }
+}
+
+/* mood: 0 asleep, 1 awake (ears up), 2 sad; ear: its swing (1024 = a turn) */
+static void mk_dog_mesh(int mood, int32_t ear, int32_t wag)
+{
+    int s, h0 = mk_nv;
+    mk_fneck = 0xFFFFu;
+    mk_tube(MK_BODY, 7, 0, S_DOG);
+    h0 = mk_nv;
+    mk_tube(MK_HEAD, 6, 0, S_DOG);
+    mk_vhead = (uint16_t)(h0 + 6);                     /* the skull's top */
+    mk_tube(MK_PAW, 2, Q(9) / 2, S_DOG);
+    mk_tube(MK_PAW, 2, -Q(9) / 2, S_DOG);
+    for (s = -1; s <= 1; s += 2) {                    /* the ears: hinged at the skull's side */
+        int32_t a = (mood == 1 ? 1024 * 70 / 360 : mood == 2 ? 0 : 1024 * 12 / 360) + ear;
+        int32_t sn = mkj_sin((uint32_t)a << 22) >> 7, cs = mkj_sin((uint32_t)(a + 256) << 22) >> 7, L = mood == 1 ? 13 : 17;
+        int e0 = mk_dv(s * Q(7), Q(20), Q(-10)), e1 = mk_dv(s * Q(7), Q(20), Q(-17));
+        int e2 = mk_dv(s * (Q(7) + Q(L) * sn / 256), Q(20) - Q(L) * cs / 256, Q(-21)),
+            e3 = mk_dv(s * (Q(7) + Q(L) * sn / 256), Q(20) - Q(L) * cs / 256, Q(-7));
+        mk_quadf(e0, e1, e2, e3, MK_HDR(S_EAR, 0, G_DOG), 0xAAu, h0 + 6, h0 + 9);
+    }
+    s = mk_hs >= 0 ? 1 : -1;                          /* the eye on the side the camera sees */
+    if (mood == 1) {
+        mk_veye[0] = (uint16_t)mk_dv(s * Q(7), Q(16), Q(-18));
+        mk_veye[1] = mk_veye[2] = (uint16_t)mk_dv(s * Q(6), Q(15), Q(-22));
+    } else {
+        mk_veye[0] = (uint16_t)mk_dv(s * Q(7), Q(16), Q(-17));
+        mk_veye[1] = (uint16_t)mk_dv(s * Q(7), Q(mood == 2 ? 17 : 15), Q(-19));
+        mk_veye[2] = (uint16_t)mk_dv(s * Q(6), Q(16), Q(-21));
+    }
+    mk_vnose = (uint16_t)mk_dv(0, Q(11), Q(-33));
+    mk_vtail[0] = (uint16_t)mk_dv(0, Q(15), Q(35));
+    mk_vtail[1] = (uint16_t)mk_dv(wag / 2, Q(mood == 2 ? 13 : 22), Q(41));
+    mk_vtail[2] = (uint16_t)mk_dv(wag, Q(mood == 2 ? 9 : 28), Q(42));
+}
+
+/* camera: the vertices of a pass (0 mirrored in the floor) to the screen */
+static void mk_xform(int pass)
+{
+    int32_t i;
+    for (i = 0; i < mk_nv; i++) {
+        int32_t lx = mk_lv[3 * i], ly = mk_lv[3 * i + 1], lz = mk_lv[3 * i + 2];
+        int32_t wx = ((lx * mk_hc + lz * mk_hs) >> 15) + mk_hx - mk_cx, wy = (pass ? ly : -ly) - mk_cy;
+        int32_t wz = ((lz * mk_hc - lx * mk_hs) >> 15) + mk_hz - mk_cz;
+        int32_t yc = (wy * mk_cb + wz * mk_sb) >> 15, zc = (wz * mk_cb - wy * mk_sb) >> 15;
+        if (zc < Q(8))
+            zc = Q(8);
+        mk_sv[pass][2 * i] = (int16_t)mk_lo(mk_hi(Q(120) + MK_F * 16 * wx / zc, 8000), -8000);
+        mk_sv[pass][2 * i + 1] = (int16_t)mk_lo(mk_hi(Q(MK_Y0) - MK_F * 16 * yc / zc, 8000), -8000);
+        mk_sz[i] = (int16_t)mk_hi(zc, 32767);
+    }
+}
+
+static uint32_t mk_rgb(uint16_t c)
+{
+    return (uint32_t)(c >> 11) << 19 | (uint32_t)((c >> 5) & 63u) << 10 | (uint32_t)(c & 31u) << 3;
+}
+
+static uint32_t mk_key_col(int32_t k)
+{
+    if (mk_ota && mk_step == 9u && mk_code != 1)
+        return 0xFF2020;                                         /* failed: red */
+    if (mk_ota && k >= (mk_step >= 5u ? MK_NK : mk_step * MK_NK / 5))
+        return 0x383850;                                         /* the progress: keys not lit yet */
+    return mk_hue(1350u + 1536u * 4u - ((uint32_t)k * 1350u / (MK_NK - 1) + (mk_t > 3000u ? (mk_t - 3000u) / 3u : 0u)) % 1536u);
+}
+
+/* the visible faces of a pass, shaded, back to front */
+static const uint8_t MK_RANK[2][4] = {{1, 0, 2, 3}, {0, 1, 2, 3}};
+static void mk_faces(int pass)
+{
+    uint32_t off = 0, n;
+    int32_t m = 0, i;
+    const int16_t *sv = mk_sv[pass];
+    for (; off < mk_nfw; off += 4u + n) {
+        uint32_t h = mk_fd[off], g = h >> 12, sty = (h >> 4) & 15u;
+        const uint16_t *v = mk_fd + off + 4;
+        int32_t a, z = 0, nx, ny, nz, l, rim;
+        uint32_t c;
+        n = h & 15u;
+        if (pass == 0 && g >= G_KEY)
+            continue;
+        a = (sv[2 * v[1]] - sv[2 * v[0]]) * (sv[2 * v[2] + 1] - sv[2 * v[0] + 1]) -
+            (sv[2 * v[1] + 1] - sv[2 * v[0] + 1]) * (sv[2 * v[2]] - sv[2 * v[0]]);
+        if (!MK_VIS(pass, a))
+            continue;
+        if (m >= MK_NL)
+            break;
+        for (i = 0; i < (int32_t)n; i++)
+            z += mk_sz[v[i]];
+        z /= (int32_t)n;
+        if (sty == S_DOOR)
+            z -= Q(4);                                   /* (a decal on the wall) */
+        nx = (int8_t)(mk_fd[off + 2] & 255u);
+        ny = (int8_t)(mk_fd[off + 2] >> 8);
+        nz = (int8_t)(mk_fd[off + 3] & 255u);
+        l = (nx * mk_hc + nz * mk_hs) >> 15;             /* the normal, turned with the house */
+        nz = (nz * mk_hc - nx * mk_hs) >> 15;
+        nx = l;
+        if (!pass)
+            ny = -ny;
+        l = (-nx * 58 + ny * 102 - nz * 51) >> 7;         /* light from the upper left front, 0..127 */
+        if (l < 0)
+            l = 0;
+        rim = (ny * (-mk_sb >> 8) + nz * (mk_cb >> 8)) >> 7;   /* toward the camera, 0..127 */
+        rim = 127 - (rim < 0 ? -rim : rim);
+        c = sty == S_KEY ? mk_scale(mk_key_col((int32_t)(h >> 8) & 15), 70u + (uint32_t)mk_kflash[(h >> 8) & 15u] / 2u)
+                         : MK_SFILL[sty];
+        c = mk_scale(c, 96u + (uint32_t)l * 160u / 127u);
+        l = g == G_DOG ? 40 + (rim * rim >> 7) * 215 / 127 : 255;  /* the dog: brighter where it turns away */
+        z = (int32_t)MK_RANK[pass][g] << 13 | (8191 - mk_hi(mk_lo(z >> 2, 0), 8191));   /* rank, then far first */
+        for (i = m; i > 0 && mk_lz[i - 1] > z; i--) {             /* (insertion: few faces, mostly in order) */
+            mk_lz[i] = mk_lz[i - 1];
+            mk_lo_[pass][i] = mk_lo_[pass][i - 1];
+            mk_lc[pass][i] = mk_lc[pass][i - 1];
+            mk_ll[pass][i] = mk_ll[pass][i - 1];
+        }
+        mk_lz[i] = (int16_t)z;
+        mk_lo_[pass][i] = (uint16_t)off;
+        mk_lc[pass][i] = (uint16_t)(((c >> 19) & 31u) << 11 | ((c >> 10) & 63u) << 5 | ((c >> 3) & 31u));
+        mk_ll[pass][i] = (uint8_t)(pass ? l : l / 3);
+        m++;
+    }
+    mk_nl[pass] = (uint16_t)m;
+}
+
+/* draw a pass's faces into the strip */
+static void mk_draw(int pass)
+{
+    int32_t k;
+    const int16_t *sv = mk_sv[pass];
+    for (k = 0; k < mk_nl[pass]; k++) {
+        uint32_t off = mk_lo_[pass][k], h = mk_fd[off], n = h & 15u, sty = (h >> 4) & 15u, em = mk_fd[off + 1], e;
+        const uint16_t *v = mk_fd + off + 4;
+        int32_t p[18], ylo = 99999, yhi = -99999, i, lvl = mk_ll[pass][k];
+        uint32_t ec = MK_SEDGE[sty];
+        for (i = 0; i < (int32_t)n; i++) {
+            p[2 * i] = sv[2 * v[i]];
+            p[2 * i + 1] = sv[2 * v[i] + 1];
+            ylo = p[2 * i + 1] < ylo ? p[2 * i + 1] : ylo;
+            yhi = p[2 * i + 1] > yhi ? p[2 * i + 1] : yhi;
+        }
+        if ((yhi >> 4) + 5 < mk_y0 || (ylo >> 4) - 5 >= mk_y1)
+            continue;
+        mk_poly(p, (int)n, mk_rgb(mk_lc[pass][k]), pass ? 256 : 170);
+        if (sty == S_KEY) {
+            uint32_t kk = (h >> 8) & 15u;
+            ec = mk_key_col((int32_t)kk);
+            if (mk_kflash[kk])
+                ec = mk_scale(ec, 256u - mk_kflash[kk] / 2u) + mk_scale(0xFFFFFF, mk_kflash[kk] / 2u);
+        }
+        mk_core = pass ? MK_SCORE[sty] : 6;
+        mk_glow = pass ? MK_SCORE[sty] * 5 / 2 : 40;
+        for (i = 0; i < (int32_t)n; i++) {
+            e = n > 8u ? 2u : (em >> (2 * i)) & 3u;
+            if (!e)
+                continue;
+            mk_line(p[2 * i], p[2 * i + 1], p[(2 * i + 2) % (2 * (int32_t)n)], p[(2 * i + 3) % (2 * (int32_t)n)], ec,
+                    (e == 2u || (h >> 12) == G_DOG ? lvl : lvl * 2 / 5), 0);
+        }
+    }
+}
+
+/* ---- the scene each frame: the house flies in turning, the keys drop, the dog drops */
+#define MK_K0 1900u                /* the first key's drop */
+#define MK_KD 70u                  /* between keys */
+#define MK_DF 2750u                /* the dog's fall */
+#define MK_DL 2950u                /* it lands */
+static uint32_t mk_land(int k) { return MK_K0 + (uint32_t)k * MK_KD + MK_LAND; }
+
+static void mk_prep(uint32_t t)
+{
+    int32_t k, p, yaw, ear = 0, wag, mood = 0;
+    mk_t = t;
+    mk_vnose = mk_vhead = mk_fneck = 0xFFFFu;
+    mk_camera(t);
+    p = mk_expo(mk_prog(t, 700, 1300));                          /* the fly-in */
+    yaw = 1024 * 35 / 360 - 1024 * 3 / 4 * (256 - p) / 256 + (mk_ota ? 0 : 1024 * 6 / 360 * mk_cubic(mk_prog(t, 3300, 1300)) / 256);
+    if (t > 1700u && t < 2600u && !mk_ota)                       /* a little settle swing */
+        yaw += mk_sin((int32_t)((t - 1700u) * 1024u / 450u)) * 10 * (int32_t)(2600u - t) / 900 / 256;
+    mk_hs = mkj_sin((uint32_t)yaw << 22);
+    mk_hc = mkj_sin((uint32_t)(yaw + 256) << 22);
+    mk_hx = 0;
+    mk_hz = mk_ota ? 0 : Q(900) * (256 - p) / 256;
+    mk_nv = 0;
+    mk_nfw = 0;
+    if (!mk_ota && t < 700u)
+        return;
+    mk_house_mesh();
+    for (k = 0; k <= MK_NK; k++) {                                /* the keys: drop, bounce, flash */
+        uint32_t t0 = MK_K0 + (uint32_t)(k < MK_NK ? k : 6) * MK_KD + (k < MK_NK ? 0u : 480u);
+        int32_t s;
+        if (mk_ota) {
+            int lit = mk_step >= 5u ? MK_NK : mk_step * MK_NK / 5;
+            mk_kdy[k] = 0;
+            (void)lit;
+            if (k < MK_NK)
+                mk_kflash[k] = 0;
+            continue;
+        }
+        if (t < t0) {
+            mk_kdy[k] = Q(999);
+            continue;
+        }
+        s = 256 - mk_spring(t - t0);
+        mk_kdy[k] = Q(60) * (s < 0 ? -s : s) / 256;
+        if (k < MK_NK)
+            mk_kflash[k] = (uint16_t)(t - t0 >= MK_LAND ? 256 - mk_prog(t, t0 + MK_LAND, 300u) : 0);
+    }
+    mk_keys_mesh();
+    if (mk_ota) {
+        mood = mk_step == 9u && mk_code != 1 ? 2 : mk_step == 5u ? 0 : 1;
+        wag = mood == 1 ? Q(3) : 0;
+        mk_dsu = mk_dsv = 256;
+        mk_ddy = 0;
+    } else {
+        if (t < MK_DF)
+            goto xf;
+        if (t < MK_DL) {                                          /* falling, stretched */
+            p = mk_prog(t, MK_DF, MK_DL - MK_DF);
+            mk_ddy = Q(120) * (65536 - p * p) / 65536;
+            mk_dsu = 236;
+            mk_dsv = 290;
+            ear = -60;
+            mood = 1;
+        } else {                                                  /* landed: squash, spring back */
+            uint32_t s = t - MK_DL;
+            int32_t sq = s < 600u ? mk_spring(s + MK_LAND) - 256 : 0;
+            mk_ddy = 0;
+            mk_dsv = 256 - sq * 9 / 10;
+            mk_dsu = 256 + sq * 4 / 10;
+            ear = s < 900u ? mk_sin((int32_t)(s * 1024u / 330u)) * (int32_t)(900u - s) / 900 / 4 : 0;
+            mood = s < 450u ? 1 : 0;
+        }
+        wag = mk_sin((int32_t)(t * 1024u / 600u)) * Q(3) / 256;
+    }
+    mk_dog_mesh(mood, ear, wag);
     mk_dsu = mk_dsv = 256;
     mk_ddy = 0;
+xf:
+    mk_xform(0);
+    mk_faces(0);
+    mk_xform(1);
+    mk_faces(1);
+}
+
+/* the dog's glowing details over its faces: the tail, the collar, the eye, the nose */
+static void mk_dog_lines(void)
+{
+    const int16_t *sv = mk_sv[1];
+    int k;
+    if (mk_vnose >= mk_nv || !mk_nv)
+        return;
+    mk_core = 11;
+    mk_glow = 28;
+    mk_line(sv[2 * mk_vtail[0]], sv[2 * mk_vtail[0] + 1], sv[2 * mk_vtail[1]], sv[2 * mk_vtail[1] + 1], MK_CYAN, 256, 0);
+    mk_line(sv[2 * mk_vtail[1]], sv[2 * mk_vtail[1] + 1], sv[2 * mk_vtail[2]], sv[2 * mk_vtail[2] + 1], MK_CYAN, 256, 0);
+    mk_core = 20;
+    mk_line(sv[2 * mk_vtail[2]], sv[2 * mk_vtail[2] + 1], sv[2 * mk_vtail[2]], sv[2 * mk_vtail[2] + 1], 0xE0FFFF, 256, 0);
+    if (mk_fneck != 0xFFFFu) {                                    /* the collar: the neck ring's visible part */
+        mk_core = 12;
+        mk_glow = 26;
+        for (k = 0; k < 6; k++) {
+            uint32_t off = mk_fneck + 8u * (uint32_t)k;
+            const uint16_t *v = mk_fd + off + 4;
+            int32_t a = (sv[2 * v[1]] - sv[2 * v[0]]) * (sv[2 * v[2] + 1] - sv[2 * v[0] + 1]) -
+                        (sv[2 * v[1] + 1] - sv[2 * v[0] + 1]) * (sv[2 * v[2]] - sv[2 * v[0]]);
+            if (MK_VIS(1, a))
+                mk_line(sv[2 * v[0]], sv[2 * v[0] + 1], sv[2 * v[1]], sv[2 * v[1] + 1], 0xFF30C8, 256, 0);
+        }
+    }
+    mk_core = 13;
+    mk_glow = 28;
+    mk_hot = 200;
+    mk_line(sv[2 * mk_veye[0]], sv[2 * mk_veye[0] + 1], sv[2 * mk_veye[1]], sv[2 * mk_veye[1] + 1], 0xB0FAFF, 256, 0);
+    mk_line(sv[2 * mk_veye[1]], sv[2 * mk_veye[1] + 1], sv[2 * mk_veye[2]], sv[2 * mk_veye[2] + 1], 0xB0FAFF, 256, 0);
+    mk_core = 22;
+    mk_line(sv[2 * mk_vnose], sv[2 * mk_vnose + 1], sv[2 * mk_vnose], sv[2 * mk_vnose + 1], 0xFF50D0, 256, 0);
+    mk_hot = 110;
 }
 
 /* Zz rising from the head */
 static void mk_zz(uint32_t t, uint32_t t0)
 {
     int k;
-    if (mk_y0 > 100 || mk_y1 < 30 || t < t0)
+    int32_t hx, hy;
+    if (t < t0 || mk_vhead >= mk_nv || !mk_nv)
+        return;
+    hx = mk_sv[1][2 * mk_vhead];
+    hy = mk_sv[1][2 * mk_vhead + 1];
+    if ((hy >> 4) - 50 > mk_y1 || (hy >> 4) < mk_y0)
         return;
     mk_core = 12;
     mk_glow = 26;
@@ -892,8 +1135,8 @@ static void mk_zz(uint32_t t, uint32_t t0)
         int32_t p = (int32_t)((t - t0 + (uint32_t)k * 900u) % 1800u) * 256 / 1800, x, y, s, lvl;
         if (t - t0 + (uint32_t)k * 900u < 1800u && k)
             continue;
-        x = Q(80) - p * 3 / 2;
-        y = Q(78) - p * 6 / 4;
+        x = hx - Q(30) - p * 7 / 4;                   /* (drifting up and left, under the title) */
+        y = hy + Q(4) - p * 3 / 4;
         s = 56 + p / 4;                                  /* half size, 1/16 px */
         lvl = mk_sin(p * 2);
         if (lvl < 0)
@@ -904,7 +1147,7 @@ static void mk_zz(uint32_t t, uint32_t t0)
     }
 }
 
-/* ---- CRT power on / off and scanlines (on the finished strip) */
+/* ---- CRT power on / off (on the finished strip) */
 static void mk_crt(uint32_t t)
 {
     int32_t hh, hw, wh, y, x;                        /* half height, half width (1/16 px), whitening */
@@ -931,14 +1174,8 @@ static void mk_crt(uint32_t t)
             hw = Q(120) * (256 - mk_cubic(p)) / 256 + 24;
             wh = 256 - (p > 200 ? (p - 200) * 4 : 0);
         }
-    } else {
-        for (y = mk_y0 | 1; y < mk_y1; y += 2) {     /* scanlines: odd rows at 7/8 */
-            uint16_t *r = mk_buf + (y - mk_y0) * 240;
-            for (x = 0; x < 240; x++)
-                r[x] = (uint16_t)(r[x] - ((r[x] >> 3) & 0x18E3u));
-        }
+    } else
         return;
-    }
     for (y = mk_y0; y < mk_y1; y++) {
         uint16_t *r = mk_buf + (y - mk_y0) * 240;
         int32_t d = Q(y) + 8 - Q(120), w;
@@ -977,11 +1214,11 @@ static void mk_ota_text(void)
         mk_text("SWITCH OFF", 120, 217, 184, 0xFFB020, 256);
     } else if (mk_step == 9u) {
         if (mk_code == 1) {
-            mk_text("UPDATE", 120, 6, 340, 0, 250);
+            mk_text("UPDATE", 120, 6, 300, 0, 250);
             mk_text("DRY RUN OK", 120, 206, 200, 0x40FF70, 256);
         } else {
             uint32_t v = (uint32_t)(mk_code < 0 ? -mk_code : mk_code), k = 0;
-            mk_text("UPDATE", 120, 6, 340, 0xFF2828, 256);
+            mk_text("UPDATE", 120, 6, 300, 0xFF2828, 256);
             str_cpy(b, "FAILED -", sizeof b);
             while (b[k])
                 k++;
@@ -992,7 +1229,7 @@ static void mk_ota_text(void)
             mk_text(b, 120, 206, 200, 0xFF3030, 256);
         }
     } else {
-        mk_text("UPDATE", 120, 6, 340, 0, 250);
+        mk_text("UPDATE", 120, 6, 300, 0, 250);
         mk_core = 18;
         mk_glow = 38;
         mk_text(STEP[mk_step < 6u ? mk_step : 0], 120, 208, 196, 0x60F0FF, 256);
@@ -1000,35 +1237,32 @@ static void mk_ota_text(void)
     mk_hot = 110;
 }
 
-/* one strip, rows y0 .. y0 + MK_SH - 1, into buf (byte-swapped for the panel) */
+/* one strip, rows y0 .. y0 + MK_SH - 1, into buf (byte-swapped for the panel); mk_prep(t) first */
 static void mk_render(uint16_t *buf, int32_t y0, uint32_t t)
 {
     uint32_t i;
-    int32_t sy = mk_ota ? (mk_step == 5u ? 22 : 10) : 0;                     /* (the update screens lift the scene) */
+    int32_t sy = mk_ota ? 4 : 0;                                  /* (the update screens lift the scene) */
     mk_buf = buf;
     for (i = 0; i < 240u * MK_SH; i++)
         buf[i] = 0;
     mk_y0 = y0 + sy;
     mk_y1 = y0 + MK_SH + sy;
+    mk_sky(t);
+    mk_floor(t);
+    if (mk_nv) {
+        mk_draw(0);
+        mk_draw(1);
+        mk_dog_lines();
+    }
     if (mk_ota) {
-        mk_sky(t);
-        mk_floor(t);
-        mk_house(t);
-        mk_roof(t);
-        mk_dog(t, mk_step == 5u ? 0 : mk_step == 9u && mk_code != 1 ? 2 : 1, mk_step == 9u ? 30 : 0,
-               mk_step == 5u ? 0 : 40);
         if (mk_step == 5u)
             mk_zz(t, 0);
         mk_y0 = y0;
         mk_y1 = y0 + MK_SH;
+        for (i = (uint32_t)mk_lo(186 - y0, 0) * 240u; i < 240u * MK_SH; i++)
+            buf[i] = (uint16_t)((buf[i] >> 2) & 0x39E7u);           /* a darker band under the words */
         mk_ota_text();
     } else {
-        mk_sky(t);
-        mk_floor(t);
-        mk_deco(t);
-        mk_house(t);
-        mk_roof(t);
-        mk_dog_intro(t);
         mk_zz(t, 3500u);
         mk_title(t);
         mk_crt(t);
@@ -1037,31 +1271,50 @@ static void mk_render(uint16_t *buf, int32_t y0, uint32_t t)
         buf[i] = (uint16_t)(buf[i] >> 8 | buf[i] << 8);
 }
 
-/* ---- the pads (the jingle: makkuro_jingle.c, started and stopped with the animation) */
-static uint32_t mk_land(int k) { return MK_K0 + (uint32_t)k * MK_KD + MK_LAND; }
-
-/* the colour of pad r (reading order: 0..7 the top row, 8..15 the bottom row) at t, <= 60 per channel */
+/* ---- the lights: the pads (reading order: 0..7 the top row, 8..15 the bottom row; <= 60 a channel) and
+ * the button LEDs, with the music (makkuro_jingle.c) and the pictures */
 static uint32_t mk_pad(uint32_t r, uint32_t t)
 {
-    uint32_t c = 0, k;
+    uint32_t c = 0, k, pos;
     if (t < 160u)
         return mk_scale(0x282828, 256u - t * 256u / 160u);         /* the CRT flash */
+    if (t >= 600u && t < 2000u) {                                  /* a rainbow comet runs round the pads */
+        uint32_t ring = r < 8u ? r : 15u - (r - 8u), head = (t - 600u) * 32u / 1400u % 16u, d = (head + 16u - ring) % 16u;
+        if (d < 6u)
+            c = mk_scale(mk_hue(ring * 96u + t), (6u - d) * 60u * 256u / 6u / 256u);
+    }
     if (r < MK_NK && t >= mk_land((int)r)) {                       /* its key landed: a flash, then a glow */
         k = t - mk_land((int)r);
         k = k < 400u ? 240u - k * 160u / 400u : 80u;
-        c = mk_scale(mk_key_col((int32_t)r, 0), k * 60u / 256u);
+        c = mk_scale(mk_key_col((int32_t)r), k * 60u / 256u);
     }
-    if (t >= MK_DL) {                                              /* the dog lands: all join a rainbow sweep */
+    if (t >= MK_DL) {                                              /* the chord blooms: all join a rainbow sweep */
         k = t < MK_DL + 300u ? (t - MK_DL) * 256u / 300u : 256u;
         if (t > 4600u)
             k = t < 4900u ? k * (4900u - t) / 300u : 0u;
-        c = mk_scale(mk_hue(t * 3u / 2u + 1536u * 4u - (r & 7u) * 150u - (r >> 3) * 60u), k * 50u / 256u);
-        if (t < MK_DL + 450u)                                       /* the chord blooms: a white swell */
+        pos = (r & 7u) * 150u + (r >> 3) * 60u;
+        c = mk_scale(mk_hue(t * 3u / 2u + 1536u * 4u - pos), k * 50u / 256u);
+        if (t < MK_DL + 450u)                                       /* a white swell */
             c |= mk_scale(0x3C3C3C, 256u - (t - MK_DL) * 256u / 450u);
     }
     if (t >= 4250u && t < 4450u && (r * 5u + t / 40u) % 3u == 0u)    /* the chime: a sparkle */
         c = 0x3C3C3C;
     return c;
+}
+
+/* button LED i (0..18) at t: a running light while the house flies in, a pulse on each key's landing, all
+ * on at the bloom, a slow chase, off at the end */
+static int mk_led(uint32_t i, uint32_t t)
+{
+    if (t < 600u || t >= 4600u)
+        return 0;
+    if (t < 1900u)
+        return (t - 600u) / 45u % 19u == i;
+    if (t < MK_DL)
+        return (t - MK_K0) / MK_KD % 19u == i || (t - MK_K0) / MK_KD % 19u == (i + 9u) % 19u;
+    if (t < MK_DL + 300u)
+        return 1;
+    return (t / 120u + i) % 6u == 0u;
 }
 
 #ifndef MK_HOST
@@ -1070,9 +1323,12 @@ static uint16_t *mk_last;
 static void mk_frame(uint32_t t)
 {
     uint32_t s;
+    lcd_sync();
+    mk_mem(cv_px + 2u * 240u * MK_SH);
+    mk_prep(t);
     for (s = 0; s < 240u / MK_SH; s++) {
         uint16_t *b = cv_px + (s & 1u) * (240u * MK_SH);
-        if (b == mk_last || !s)
+        if (b == mk_last)
             lcd_sync();                     /* its last strip may still be going out */
         mk_render(b, (int32_t)(s * MK_SH), t);
         fm1_wdt_feed();
@@ -1081,7 +1337,7 @@ static void mk_frame(uint32_t t)
     }
 }
 
-static void mk_pads(uint32_t t)
+static void mk_lights(uint32_t t)
 {
 #if BOARD_SMK37
     uint32_t r, c;
@@ -1090,6 +1346,8 @@ static void mk_pads(uint32_t t)
         padled_set(r < 8u ? 8u + r : r - 8u, (uint8_t)(c >> 16), (uint8_t)(c >> 8), (uint8_t)c);
     }
     padled_flush();
+    for (r = 0; r < SMK_NLED; r++)
+        fm1_led_key(r, mk_led(r, t));
 #else
     (void)t;
 #endif
@@ -1116,10 +1374,10 @@ static void makkuro_splash(void)
             break;
         held &= now;                        /* (held at boot: a new press of it counts) */
         mk_frame(t);
-        mk_pads(t);
+        mk_lights(t);
     }
     mkj_stop();                             /* (a skip: fades out in 150 ms; else it has ended) */
-    mk_pads(MK_LEN);
+    mk_lights(MK_LEN);
     lcd_sync();
 }
 

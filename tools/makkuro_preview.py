@@ -24,11 +24,15 @@ ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "firmware" / "src" / "makkuro_splash.c"
 
 HARNESS = r"""
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #define MK_HOST 1
+static int16_t SINE[1025];
+static void fm1_irq_off(void) {}
+static void fm1_irq_on(void) {}
 static void str_cpy(char *d, const char *s, unsigned n)
 {
     while (n > 1 && *s) {
@@ -37,11 +41,15 @@ static void str_cpy(char *d, const char *s, unsigned n)
     }
     *d = 0;
 }
+#include "makkuro_jingle.c"
 #include "makkuro_splash.c"
-static uint16_t strip[240 * MK_SH];
+static uint16_t strip[240 * MK_SH], pool[6720];
 int main(int argc, char **argv)
 {
     int a, y;
+    for (a = 0; a < 1025; a++)
+        SINE[a] = (int16_t)lrint(32767.0 * sin(2 * M_PI * a / 1024));
+    mk_mem(pool);
     for (a = 1; a < argc; a++) {
         uint32_t t = (uint32_t)strtoul(argv[a] + (argv[a][0] == 'o'), 0, 10);
         mk_ota = argv[a][0] == 'o';
@@ -50,6 +58,7 @@ int main(int argc, char **argv)
             mk_code = (int8_t)strtol(strchr(argv[a], ',') + 1, 0, 10);
             t = 4000;
         }
+        mk_prep(t);
         for (y = 0; y < 240; y += MK_SH) {
             mk_render(strip, y, t);
             fwrite(strip, 2, 240 * MK_SH, stdout);   /* big-endian RGB565, as the panel takes it */
@@ -150,7 +159,7 @@ def main():
     with tempfile.TemporaryDirectory() as td:
         c, exe = Path(td) / "h.c", Path(td) / "h"
         c.write_text(HARNESS)
-        subprocess.run(["cc", "-O2", "-Wall", "-Wno-unused-function", "-I", str(SRC.parent), str(c),
+        subprocess.run(["cc", "-O2", "-Wall", "-Wno-unused-function", "-I", str(SRC.parent), str(c), "-lm",
                         "-o", str(exe)], check=True)
         raw = subprocess.run([str(exe), *map(str, times + otas + gif)], check=True,
                              capture_output=True).stdout
