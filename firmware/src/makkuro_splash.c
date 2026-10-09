@@ -1403,7 +1403,6 @@ static void mk_render(uint16_t *buf, int32_t y0, uint32_t t)
             buf[i] = (uint16_t)((buf[i] >> 2) & 0x39E7u);           /* a darker band under the words */
         mk_ota_text();
     } else {
-        mk_zz(t, 3500u);
         mk_title(t);
 #if BOARD_SMK37 || defined(MK_HOST)
         mk_credit(t);
