@@ -212,4 +212,10 @@ static void ota_commit(const uint8_t *parm)
 #include "recovery.c"        /* early, polled USB updater; no synth or settings */
 #endif
 #include "splash.c"          /* SLOOP boot logo (build/gen/sloop_logo.h) */
+#ifndef MAKKURO37
+#define MAKKURO37 0
+#endif
+#if MAKKURO37
+#include "makkuro_splash.c"  /* animated MAKKURO37 boot splash instead of the logo */
+#endif
 #include "main.c"
