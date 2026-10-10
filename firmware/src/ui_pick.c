@@ -176,7 +176,7 @@ static void pick_leds(void)                         /* the current sound white, 
         pg.len = 0;
     c = PICK_RGB[pg.kind % 10u];
     for (w = 0; w < 16u; w++) {
-        uint32_t p = SMK_PAD_OF_WHITE(w);
+        uint32_t p = w;                            /* reading order: pads 0..7 the top row */
         if (w >= pg.len)
             padled_set(p, 0, 0, 0);
         else if (pg.first + w == cur)
@@ -226,15 +226,9 @@ static void pick_draw(void)
             int32_t x = (int32_t)(w & 7u) * 30, sel = pg.first + w == cur;
             pick_name(pg.first + w, nm);
             pick_abbr(nm, l1, l2);
-            if (sel) {
-                cv_rect(x + 1, y0, 28, 78, C_WHITE);
-                cv_rect(x + 3, y0 + 2, 24, 74, kc);
-            } else {
-                cv_rect(x + 1, y0, 28, 78, kc);
-                cv_rect(x + 2, y0 + 1, 26, 76, pick_col(pg.kind, 3));
-            }
-            cv_text(x + 15 - text_w(&FONT_S, l1) / 2, y0 + 20, &FONT_S, l1, sel ? C_BLACK : C_WHITE);
-            cv_text(x + 15 - text_w(&FONT_S, l2) / 2, y0 + 42, &FONT_S, l2, sel ? C_BLACK : TE_G4);
+            cv_rect(x + 1, y0, 28, 78, sel ? C_WHITE : kc);   /* filled like a button: the kind's colour, the current one white */
+            cv_text(x + 15 - text_w(&FONT_S, l1) / 2, y0 + 20, &FONT_S, l1, C_BLACK);
+            cv_text(x + 15 - text_w(&FONT_S, l2) / 2, y0 + 42, &FONT_S, l2, C_BLACK);
         }
         if (half) {
             cv_text(4, 86, &FONT_L, "<", C_WHITE);

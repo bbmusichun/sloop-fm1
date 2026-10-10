@@ -931,8 +931,12 @@ static void ui_input(void)
         ui.force = 1;
     }
 #if MAKKURO37
-    if (pressed & 1u << SMK_BTN_FADER_BANK)                     /* FADER BANK: the next bank, on its screen (ui_fbank.c) */
-        fb_set(smk_fbank + 1u);
+    if (pressed & 1u << SMK_BTN_FADER_BANK) {                   /* FADER BANK: its screen on / off (ui_fbank.c) */
+        if (fb_shown())
+            fb_close(), ui.force = 1;
+        else
+            fb_set(smk_fbank);
+    }
     if (fb_shown()) {                                           /* K2 SELECT turns the bank there */
         int32_t t = panel_enc(EN_SELECT);
         if (t)
@@ -957,7 +961,7 @@ static void ui_input(void)
         uint32_t h = smk_pick_take(), p;                /* the pads hit while it was up: their sounds */
         for (p = 0; h && p < SMK_NPAD; p++)
             if ((h >> p) & 1u && pick_shown())
-                pick_select(SMK_WHITE_OF_PAD(p));
+                pick_select(p);                         /* reading order, as the screen */
     }
     if (home == BT_TAP && (fb_shown() || pick_shown())) {   /* PATCH tapped: closes the FADER BANK screen / picker */
         if (fb_shown())

@@ -1485,7 +1485,7 @@ static void mk_lights(uint32_t t)
     uint32_t r, c;
     for (r = 0; r < 16u; r++) {
         c = mk_pad(r, t);
-        padled_set(r < 8u ? 8u + r : r - 8u, (uint8_t)(c >> 16), (uint8_t)(c >> 8), (uint8_t)c);
+        padled_set(SMK_PAD_OF_WHITE(r), (uint8_t)(c >> 16), (uint8_t)(c >> 8), (uint8_t)c);
     }
     padled_flush();
     for (r = 0; r < SMK_NLED; r++)
@@ -1558,7 +1558,7 @@ static void makkuro_ota(uint32_t step, int32_t code)
             c = code == 1 ? 0x00C040u : 0xC00000u;
         else
             c = r < step * 16u / 5u ? mk_scale(mk_hue(1350u - r * 90u), 200u) : 0u;
-        padled_set(r < 8u ? 8u + r : r - 8u, (uint8_t)(c >> 16) * 60u / 255u, (uint8_t)(c >> 8) * 60u / 255u,
+        padled_set(SMK_PAD_OF_WHITE(r), (uint8_t)(c >> 16) * 60u / 255u, (uint8_t)(c >> 8) * 60u / 255u,
                    (uint8_t)c * 60u / 255u);
     }
     padled_flush();

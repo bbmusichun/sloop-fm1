@@ -284,7 +284,7 @@ static void con_smk(void)                               /* the SMK-37 Pro inputs
     con_puts("\r\n");
 }
 
-/* what the firmware sends the pads: GRB words by hardware pad (8..15 top row, 0..7 bottom row) */
+/* what the firmware sends the pads: GRB words by hardware pad (0..7 top row, 8..15 bottom row) */
 static void con_leds(void)
 {
     uint32_t i;
@@ -297,7 +297,7 @@ static void con_leds(void)
     }
 }
 
-/* the pad LEDs' colour order: hardware pad 8 (top left) red, 9 green, 10 blue, 11 white, for 20 s */
+/* the pad LEDs' colour order: hardware pad 8 (bottom left) red, 9 green, 10 blue, 11 white, for 20 s */
 static void con_padtest(void)
 {
     uint32_t i;

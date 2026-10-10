@@ -41,8 +41,12 @@ int main(int argc, char **argv)
     ui.layer = LY_STEP;
     check(!fb_shown(), "hidden while a layer is held");
     ui.layer = LY_PLAY;
-    fm1_ms += FB_MS + 10u;
-    check(!fb_shown(), "closes by itself after FB_MS");
+    fm1_ms += 60000u;
+    check(fb_shown(), "stays up until FADER BANK / PATCH");
+    fb_set(3); fb_set(smk_fbank + 1u);
+    check(smk_fbank == 0, "K2 turns the bank round (D -> A)");
+    fb_close();
+    check(!fb_shown(), "closed");
     printf("fbank: %s\n", fails ? "FAIL" : "ok");
     return fails != 0;
 }

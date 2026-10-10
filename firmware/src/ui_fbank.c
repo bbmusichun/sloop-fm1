@@ -1,17 +1,14 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Snoop37 (SMK-37 Pro): Copyright (C) 2026 M. Geisler (makkuro) <mcgeisler@gmail.com> */
-/* The FADER BANK screen: the four banks (A LEVEL, B FILTER, C REVERB, D DELAY), the active one lit, and what
- * faders 1..4 set in it (tracks 1..4, in their colours) with the values now. Opened by FADER BANK (each press:
- * the next bank, as before); K2 SELECT turns the bank while it is up; closes FB_MS after the last action or on
- * PATCH. The bank stays smk_fbank (ui_input.c), the faders keep their takeover (main.c smk_faders). */
-#define FB_MS 3000u
+/* The FADER BANK screen: the four banks, the active one lit, what faders 1..4 set (track colours).
+ * FADER BANK opens / closes it, K2 SELECT turns the bank round, PATCH closes it. */
 static const char *const FB_NAME[4] = {"LEVEL", "FILTER", "REVERB", "DELAY"};
 static uint8_t fb_open;
 static uint32_t fb_t, fb_frame;                    /* last action (ms); the frame drawn last */
 
 static int fb_shown(void)
 {
-    return fb_open && fm1_ms - fb_t < FB_MS && !ui.menu && ui.layer == LY_PLAY && !ui.hold_kind;
+    return fb_open && !ui.menu && ui.layer == LY_PLAY && !ui.hold_kind;
 }
 static void fb_set(uint32_t b)                     /* bank b, the screen up */
 {

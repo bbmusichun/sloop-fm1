@@ -195,7 +195,7 @@ static uint8_t padled_dirty = 1;
 static uint32_t padled_hold_until;              /* (console padtest: the UI leaves the pads alone until then) */
 static uint32_t bled_hold_until;                /* (console bled: one button LED alone until then) */
 static uint8_t bled_id;
-/* hardware pad (8..15 top row, 0..7 bottom row, left to right; smk_input.h SMK_PAD_OF_WHITE) -> position in
+/* hardware pad (0..7 top row, 8..15 bottom row, left to right; smk_input.h SMK_PAD_OF_WHITE) -> position in
  * the chain (stock table) */
 static const uint8_t PADLED_SLOT[PADLED_N] = {0, 15, 14, 13, 12, 11, 10, 9, 1, 2, 3, 4, 5, 6, 7, 8};
 
