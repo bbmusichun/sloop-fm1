@@ -960,6 +960,13 @@ static void ui_timers(void)
         ui.hot_t--;
 }
 
+#if BOARD_SMK37 && MAKKURO37
+static int fb_shown(void);                      /* ui_fbank.c */
+static void fb_draw(void);
+static int fb_left(void);
+static void fb_set(uint32_t b);
+static void fb_close(void);
+#endif
 static void vis_draw(void);                     /* ui_vis.c */
 static int vis_shown(void);
 static uint8_t vis_on, vis_shown_last, vis_name_t;   /* the visualiser (ui_vis.c): on, drawn last frame, its name's time */
@@ -990,13 +997,16 @@ static void ui_draw(void)
             ui_message("ERASED");
     }
 #if BOARD_SMK37 && MAKKURO37
-    if (pick_shown()) {                                 /* the pad sound picker (ui_pick.c) */
-        pick_draw();
+    if (fb_shown() || pick_shown()) {                  /* the FADER BANK screen (ui_fbank.c), the pad picker (ui_pick.c) */
+        if (fb_shown())
+            fb_draw();
+        else
+            pick_draw();
         ui_timers();
         ui.force = 0;
         return;
     }
-    if (pick_frame && pick_frame + 1u == ui.frame) {   /* back from it */
+    if (fb_left() | (pick_frame && pick_frame + 1u == ui.frame)) {   /* back from them */
         pick_frame = 0;
         lcd_fill(0, 0, 240, 240, C_BLACK);
         ui.force = 1;

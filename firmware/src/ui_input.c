@@ -930,12 +930,22 @@ static void ui_input(void)
         }
         ui.force = 1;
     }
+#if MAKKURO37
+    if (pressed & 1u << SMK_BTN_FADER_BANK)                     /* FADER BANK: the next bank, on its screen (ui_fbank.c) */
+        fb_set(smk_fbank + 1u);
+    if (fb_shown()) {                                           /* K2 SELECT turns the bank there */
+        int32_t t = panel_enc(EN_SELECT);
+        if (t)
+            fb_set(smk_fbank + (t > 0 ? 1u : 3u));
+    }
+#else
     if (pressed & 1u << SMK_BTN_FADER_BANK) {                   /* FADER BANK: what the four faders set */
         static const char *const FB[4] = {"A  LEVEL", "B  FILTER", "C  REVERB", "D  DELAY"};
         smk_fbank = (uint8_t)((smk_fbank + 1u) % 4u);
         smk_fbank_new = 1;
         ui_say("FADER BANK ", FB[smk_fbank]);
     }
+#endif
 #endif
     uint32_t home = btn_hold(&ui.home_t0, B_HOME, now, 1);
     int32_t s;
@@ -949,8 +959,11 @@ static void ui_input(void)
             if ((h >> p) & 1u && pick_shown())
                 pick_select(SMK_WHITE_OF_PAD(p));
     }
-    if (home == BT_TAP && pick_shown()) {               /* PATCH tapped: closes it */
-        pick_close();
+    if (home == BT_TAP && (fb_shown() || pick_shown())) {   /* PATCH tapped: closes the FADER BANK screen / picker */
+        if (fb_shown())
+            fb_close();
+        else
+            pick_close();
         home = BT_NONE;
     }
 #elif BOARD_SMK37

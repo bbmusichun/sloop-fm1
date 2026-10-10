@@ -101,6 +101,9 @@
 #include "ui_layers.c"       /* hold a function button: what the keys and knobs do (TE style) */
 #include "ui_menu.c"
 #include "ui_input.c"
+#if BOARD_SMK37 && MAKKURO37
+#include "ui_fbank.c"         /* Snoop37: the FADER BANK screen */
+#endif
 #ifndef FELUCCA_FLASH
 #define FELUCCA_FLASH 1          /* flash driver + storage.c */
 #endif
