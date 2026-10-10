@@ -100,6 +100,9 @@
 #include "ui_vis.c"           /* the full-screen visualiser (HOME on HOME, 2.4) */
 #include "ui_layers.c"       /* hold a function button: what the keys and knobs do (TE style) */
 #include "ui_menu.c"
+#if BOARD_SMK37 && MAKKURO37
+#include "ui_trkpad.c"        /* Snoop37: the TRACKS screen's track pads */
+#endif
 #include "ui_input.c"
 #if BOARD_SMK37 && MAKKURO37
 #include "ui_fbank.c"         /* Snoop37: the FADER BANK screen */

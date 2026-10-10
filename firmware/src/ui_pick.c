@@ -13,6 +13,7 @@ static const uint8_t PICK_RGB[10][3] = {           /* a colour a kind (pads and 
 static uint8_t pick_pin, pick_tmp, pick_sel = 0xFF;
 static uint16_t pick_page;
 static uint32_t pick_t, pick_frame;                /* last touch (ms); the frame drawn last */
+static uint32_t pick_k4_until;                     /* KNOB BANK lit until (ms): a PRESETS detent */
 typedef struct { uint16_t first, len, sub, nsub, kind; } pick_pg_t;
 
 static uint32_t pick_total(void)
@@ -130,6 +131,7 @@ static void pick_open_tmp(void)                    /* a PRESETS turn: the curren
 {
     pick_tmp = 1;
     pick_t = fm1_ms;
+    pick_k4_until = fm1_ms + 150u;
     pick_home();
 }
 static void pick_turn(int32_t d)                   /* < > */

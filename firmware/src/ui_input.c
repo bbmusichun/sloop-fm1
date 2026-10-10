@@ -284,8 +284,8 @@ static void ui_leds(void)
     smk_pad_piano = ui.layer == LY_SCALE;          /* SCALE held: the pads are a little piano (smk_input.h) */
     fm1_led[SMK_BTN_FADER_BANK] = smk_fbank != 0;  /* FADER BANK lit off bank A */
 #if MAKKURO37
-    fm1_led[SMK_BTN_KNOB_BANK] = pick_pin;         /* KNOB BANK lit while the pad picker is pinned */
-    smk_pad_pick = (uint8_t)pick_shown();          /* (the pads pick, no notes) */
+    fm1_led[SMK_BTN_KNOB_BANK] = pick_pin || (int32_t)(fm1_ms - pick_k4_until) < 0;   /* KNOB BANK: picker pinned, K4 turning */
+    smk_pad_pick = (uint16_t)(pick_shown() ? 0xFFFFu : trkpad_on() ? TRKPAD_MASK : 0u);   /* (these pads: no notes) */
 #else
     fm1_led[SMK_BTN_KNOB_BANK] = ui.menu != 0;     /* KNOB BANK lit while the menu is up */
 #endif
@@ -347,6 +347,13 @@ static void ui_leds(void)
                 else
                     padled_set(SMK_PAD_OF_WHITE(c), 0, 0, 0);
             }
+#if MAKKURO37
+            if (trkpad_on())                       /* the track pads: their colours, the selected one bright */
+                for (c = 0; c < NTRK; c++) {
+                    uint32_t p = (c & 1u) | (c >> 1) << 3, sh = c == song.sel ? 0u : 3u;
+                    padled_set(p, (uint8_t)(PAL[c][0] >> sh), (uint8_t)(PAL[c][1] >> sh), (uint8_t)(PAL[c][2] >> sh));
+                }
+#endif
         }
     }
 #else
@@ -962,6 +969,8 @@ static void ui_input(void)
         for (p = 0; h && p < SMK_NPAD; p++)
             if ((h >> p) & 1u && pick_shown())
                 pick_select(p);                         /* reading order, as the screen */
+            else if ((h >> p) & 1u && trkpad_on())
+                trkpad_hit(p);                          /* TRACKS: the track pads */
     }
     if (home == BT_TAP && (fb_shown() || pick_shown())) {   /* PATCH tapped: closes the FADER BANK screen / picker */
         if (fb_shown())

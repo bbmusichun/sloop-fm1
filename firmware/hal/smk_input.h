@@ -103,7 +103,7 @@ static const int8_t SMK_PIANO_NOTE[SMK_NPAD] = {7, 9, 11, 12, 14, 16, 18, 19, 8,
 static volatile uint8_t smk_pad_piano;
 static uint8_t smk_pad_note[SMK_NPAD];   /* the note key a pad pressed (+1; 0 = none): its release ends that one */
 #if MAKKURO37
-static volatile uint8_t smk_pad_pick;    /* Snoop37: the pads pick sounds (ui_pick.c): a hit sets its bit here, no note */
+static volatile uint16_t smk_pad_pick;   /* Snoop37: pads that go to the UI (picker, TRACKS track pads): a hit sets its bit here, no note */
 static volatile uint16_t smk_pick_hits;  /* bit per hardware pad */
 #endif
 #define SMK_WHITE_OF_PAD(p) ((p) < 8u ? (p) + 8u : (p) - 8u)
@@ -444,7 +444,7 @@ static void smk__padq(uint32_t pad, uint32_t vel)     /* a pad hit (vel) or rele
     uint32_t n, bit;
     if (vel) {
 #if MAKKURO37
-        if (smk_pad_pick) {
+        if ((smk_pad_pick >> pad) & 1u) {
             smk_pick_hits |= (uint16_t)(1u << pad);
             return;
         }
