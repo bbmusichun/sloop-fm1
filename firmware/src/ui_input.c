@@ -345,6 +345,10 @@ static void ui_leds(void)
             if (ui.layer == LY_PLAY && !kb_grid) { /* playing: the steps in reading order, the notes low at the bottom */
                 uint32_t nt = fm1_in.notes | (is_drum(TSEL) || lights_notes ? keys_sounding(TSEL) : 0u), g = keys_guide();
                 uint32_t head = song.playing ? TSEL->seq_idx % 16u : 16u, sh;
+                if (is_drum(TSEL))                 /* outer-key drums: no pad light */
+                    for (c = 0; c < 16u; c++)
+                        if ((int32_t)(fm1_ms - ext_quiet[c]) < 0)
+                            nt &= ~(1u << key_of_white(c));
                 for (c = 0; c < 16u; c++) {        /* c: pad = step */
                     sh = c == head || (nt >> key_of_white(SMK_WHITE_OF_PAD(c))) & 1u ? 1u : (g >> key_of_white(c)) & 1u ? 3u : 8u;
                     padled_set(c, (uint8_t)(col[0] >> sh), (uint8_t)(col[1] >> sh), (uint8_t)(col[2] >> sh));

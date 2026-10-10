@@ -4,7 +4,7 @@
  * order (ui.c BANK), 16 a page, then the user presets; on the drum track the kits. A pad loads its sound
  * (as PRESETS does) and plays a short preview; < > step the pages. KNOB BANK pins it open; a PRESETS
  * turn opens it for PICK_MS. Pad hits never reach the notes while it is up (smk_input.h smk_pad_pick). */
-#define PICK_MS 4000u
+#define PICK_MS 1500u
 enum { PK_USER = 8, PK_KITS = 9 };
 static const char *const PICK_KIND[10] = {"BASS", "KEYS", "ORGN", "PAD", "LEAD", "PLCK", "STAB", "FX", "USER", "KITS"};
 static const uint8_t PICK_RGB[10][3] = {           /* a colour a kind (pads and screen) */

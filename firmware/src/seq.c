@@ -1556,6 +1556,7 @@ static void audition_block(void)
  * B5 CRASH, C6 RIDE above (G#5: COWBELL, G5's). Only the 16 lanes: projects stay SLOOP / FM-1 compatible. */
 static uint8_t ext_note[FM1_NKEY], ext_trk[FM1_NKEY];   /* note + 1 sounding, 0 = none; 0x80 | lane: a drum */
 static const int8_t EXT_LANE[FM1_NKEY] = {0, 0, 2, 2, 4, [32] = 15, [33] = 5, [34] = 5, [35] = 11, [36] = 12};
+static uint32_t ext_quiet[16];                    /* a lane hit from an outer key: no pad light until (ms) */
 static void ext_keys_block(void)
 {
     int32_t e;
@@ -1586,6 +1587,7 @@ static void ext_keys_block(void)
         if (is_drum(t)) {                                 /* more drums */
             uint32_t lane = (uint32_t)EXT_LANE[k] & 15u, lvl = smk_vel_lvl(v);
             ext_note[k] = (uint8_t)(0x80u | lane);
+            ext_quiet[lane] = fm1_ms + 600u;
             drum_input(lane, lvl, 0, 1);
             mc = trk_midi_ch(TRK_DRUM);
             midi_out_event(0x09u | (0x90u | mc) << 8 | (uint32_t)LANE_NOTE[lane] << 16 | lvl_vel(lvl, 100) << 24);
