@@ -283,7 +283,12 @@ static void ui_leds(void)
         fm1_led[c] = nl[c];
     smk_pad_piano = ui.layer == LY_SCALE;          /* SCALE held: the pads are a little piano (smk_input.h) */
     fm1_led[SMK_BTN_FADER_BANK] = smk_fbank != 0;  /* FADER BANK lit off bank A */
+#if MAKKURO37
+    fm1_led[SMK_BTN_KNOB_BANK] = pick_pin;         /* KNOB BANK lit while the pad picker is pinned */
+    smk_pad_pick = (uint8_t)pick_shown();          /* (the pads pick, no notes) */
+#else
     fm1_led[SMK_BTN_KNOB_BANK] = ui.menu != 0;     /* KNOB BANK lit while the menu is up */
+#endif
     if (!is_drum(TSEL) && TSEL->p[P_AMODE])        /* ARP lit while the selected track's arpeggiator runs */
         fm1_led[panel.btn[B_ARP]] = 1;
     if ((int32_t)(fm1_ms - bled_hold_until) < 0)   /* (console bled: only that LED) */
@@ -292,6 +297,11 @@ static void ui_leds(void)
     if ((int32_t)(fm1_ms - padled_hold_until) >= 0) {   /* the pads. Off is off: no glow layers */
         static const uint8_t PAL[NTRK][3] = {{40, 124, 255}, {30, 204, 112}, {255, 198, 24}, {255, 98, 26}};   /* the screen's track colours (TE_COL) */
         const uint8_t *col = PAL[song.sel % NTRK];
+#if MAKKURO37
+        if (pick_shown())
+            pick_leds();
+        else
+#endif
         if (ui.layer == LY_SCALE) {                /* white and black keys lit white, the scale green, its root brighter */
             uint32_t sk = scale_keys(0), rk = scale_keys(1);
             for (c = 0; c < 16u; c++) {
@@ -905,6 +915,11 @@ static void ui_input(void)
     if (pressed & (1u << SMK_BTN_LEFT | 1u << SMK_BTN_RIGHT)) {   /* < >: SEQ held: the step pages; the visualiser:
                                                                 * its style; else the pages, as SELECT (never the tempo) */
         int32_t d = (pressed >> SMK_BTN_RIGHT) & 1u ? 1 : -1;
+#if MAKKURO37
+        if (pick_shown())
+            pick_turn(d);
+        else
+#endif
         if (ui.layer == LY_STEP) {
             uint32_t pages = (trk_len(TSEL) + 15u) / 16u;
             ui.step_page = (uint8_t)((ui.step_page + pages + (uint32_t)d) % (pages ? pages : 1u));
@@ -925,7 +940,20 @@ static void ui_input(void)
     uint32_t home = btn_hold(&ui.home_t0, B_HOME, now, 1);
     int32_t s;
     int layered;
-#if BOARD_SMK37
+#if BOARD_SMK37 && MAKKURO37
+    if (pressed & 1u << SMK_BTN_KNOB_BANK)              /* KNOB BANK: pins the pad picker open / closes it */
+        pick_pin_toggle();
+    {
+        uint32_t h = smk_pick_take(), p;                /* the pads hit while it was up: their sounds */
+        for (p = 0; h && p < SMK_NPAD; p++)
+            if ((h >> p) & 1u && pick_shown())
+                pick_select(SMK_WHITE_OF_PAD(p));
+    }
+    if (home == BT_TAP && pick_shown()) {               /* PATCH tapped: closes it */
+        pick_close();
+        home = BT_NONE;
+    }
+#elif BOARD_SMK37
     if (pressed & 1u << SMK_BTN_KNOB_BANK)              /* KNOB BANK: the menu, as holding HOME (PATCH) */
         home = BT_HOLD;
 #endif
@@ -1056,6 +1084,9 @@ static void ui_input(void)
             TDRUM->p[P_E0] = (int16_t)clamp(TDRUM->p[P_E0] + s, 0, DRUM_KITS - 1);
         else if (total)
             preset_go((uint32_t)(((int32_t)cur + s % (int32_t)total + (int32_t)total) % (int32_t)total));
+#if BOARD_SMK37 && MAKKURO37
+        pick_open_tmp();                                /* the pad picker, a few seconds, at this sound's page */
+#endif
     }
     if ((s = panel_enc(EN_ALGO)) != 0 && !ft_on)     /* ALGORITHM: the selected track, on every page (not in a take) */
         track_select((uint32_t)clamp((int32_t)song.sel + (s > 0 ? 1 : -1), 0, NTRK - 1));

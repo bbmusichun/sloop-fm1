@@ -102,6 +102,10 @@ static const uint8_t SMK_WHITE_NOTE[SMK_NPAD] = {0, 2, 4, 6, 7, 9, 11, 12, 14, 1
 static const int8_t SMK_PIANO_NOTE[SMK_NPAD] = {7, 9, 11, 12, 14, 16, 18, 19, 8, 10, -1, 13, 15, 17, -1, 20};
 static volatile uint8_t smk_pad_piano;
 static uint8_t smk_pad_note[SMK_NPAD];   /* the note key a pad pressed (+1; 0 = none): its release ends that one */
+#if MAKKURO37
+static volatile uint8_t smk_pad_pick;    /* Snoop37: the pads pick sounds (ui_pick.c): a hit sets its bit here, no note */
+static volatile uint16_t smk_pick_hits;  /* bit per hardware pad */
+#endif
 #define SMK_WHITE_OF_PAD(p) ((p) < 8u ? (p) + 8u : (p) - 8u)   /* (the same swap both ways) */
 
 #define SMK_TRIM_FLASH 0xC1000u   /* USRTRIM: the factory calibration record ("trimdat"), never written here */
@@ -439,6 +443,12 @@ static void smk__padq(uint32_t pad, uint32_t vel)     /* a pad hit (vel) or rele
     int32_t n0 = smk_pad_piano ? SMK_PIANO_NOTE[pad] : (int32_t)SMK_WHITE_NOTE[SMK_WHITE_OF_PAD(pad)];
     uint32_t n, bit;
     if (vel) {
+#if MAKKURO37
+        if (smk_pad_pick) {
+            smk_pick_hits |= (uint16_t)(1u << pad);
+            return;
+        }
+#endif
         if (n0 < 0)
             return;                                   /* (a gap of the piano layout) */
         smk_pad_note[pad] = (uint8_t)(n0 + 1);
@@ -630,6 +640,16 @@ static uint32_t fm1_input_note_edges(void)
     fm1__unlock(k);
     return p;
 }
+
+#if MAKKURO37
+static uint32_t smk_pick_take(void)             /* the pads hit for the picker since the last call */
+{
+    uint32_t k = fm1__lock(), h = smk_pick_hits;
+    smk_pick_hits = 0;
+    fm1__unlock(k);
+    return h;
+}
+#endif
 
 /* the next outer-key event (keybed key << 8 | velocity, 0 = release), -1 if none */
 static int32_t smk_extkey_take(void)

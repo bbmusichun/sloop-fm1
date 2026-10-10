@@ -1603,12 +1603,39 @@ static void ext_keys_block(void)
 }
 #endif
 
+#if BOARD_SMK37 && MAKKURO37
+/* Snoop37: the pad picker's preview (ui_pick.c), a short note on the selected synth track */
+static volatile uint8_t pick_aud_req;            /* note + 1, 0 = none */
+static uint8_t pick_aud_note, pick_aud_trk;      /* sounding: note + 1 */
+static uint32_t pick_aud_t;
+static void pick_aud_block(void)
+{
+    uint32_t r = pick_aud_req;
+    if (pick_aud_note && (r || fm1_ms - pick_aud_t >= 350u)) {
+        trk_note_off(&trk[pick_aud_trk], pick_aud_note - 1u);
+        pick_aud_note = 0;
+    }
+    if (!r)
+        return;
+    pick_aud_req = 0;
+    pick_aud_trk = (uint8_t)(song.sel % NTRK);
+    if (is_drum(&trk[pick_aud_trk]))
+        return;
+    pick_aud_note = (uint8_t)r;
+    pick_aud_t = fm1_ms;
+    trk_note_on(&trk[pick_aud_trk], r - 1u, 100);
+}
+#endif
+
 static void keyboard_block(void)
 {
     uint32_t cur = fm1_in.notes, ch = cur ^ kb_prev, k, r;
     audition_block();
 #if BOARD_SMK37
     ext_keys_block();
+#if MAKKURO37
+    pick_aud_block();
+#endif
 #endif
     if (!(layer_buttons() & ly_bit[LY_ROLL]))         /* ARP up (and not locked): the rolls end (the keys stay silent) */
         for (r = 0; r < NROLL; r++)
