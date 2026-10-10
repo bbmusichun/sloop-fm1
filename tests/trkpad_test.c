@@ -1,12 +1,13 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* Snoop37 TRACKS track pads (firmware/src/ui_trkpad.c) on the UI harness: pads 0 1 8 9 select tracks 1..4
- * on the TRACKS screen only; KNOB BANK's PRESETS timer (ui_pick.c). */
+ * on the TRACKS screen only; KNOB BANK's PRESETS timer (ui_pick.c); which modes make the pads a grid (ui_padgrid.c). */
 #define UI_PAGES_HARNESS_ONLY 1
 #include "ui_pages_test.c"
 static uint8_t smk_fbank, smk_fbank_new;           /* (ui_input.c, SMK build) */
 #include "../firmware/src/ui_pick.c"
 #include "../firmware/src/ui_fbank.c"
 #include "../firmware/src/ui_trkpad.c"
+#include "../firmware/src/ui_padgrid.c"
 
 int main(int argc, char **argv)
 {
@@ -48,6 +49,15 @@ int main(int argc, char **argv)
     check(!trkpad_on(), "off on another page");
     go_home();
     check(trkpad_on(), "back on TRACKS: on");
+    check(!padgrid_on(), "playing notes: not a grid (low notes at the bottom)");
+    ui.layer = LY_STEP; check(padgrid_on(), "SEQ held (steps): a grid");
+    ui.layer = LY_FX; check(padgrid_on(), "FX held (effects): a grid");
+    ui.layer = LY_MIX; check(padgrid_on(), "GLO held (mix tiles): a grid");
+    ui.layer = LY_SONG; check(padgrid_on(), "SAVE held (slots): a grid");
+    ui.layer = LY_ERASE; check(!padgrid_on(), "EDIT held (erase notes / sounds): not a grid");
+    ui.layer = LY_ROLL; check(!padgrid_on(), "ARP held (note repeat): not a grid");
+    ui.layer = LY_PLAY; kb_grid = 1; check(padgrid_on(), "the DRUMS grid page: a grid");
+    kb_grid = 0;
     printf("trkpad: %s\n", fails ? "FAIL" : "ok");
     return fails != 0;
 }

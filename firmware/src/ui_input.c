@@ -286,6 +286,7 @@ static void ui_leds(void)
 #if MAKKURO37
     fm1_led[SMK_BTN_KNOB_BANK] = pick_pin || (int32_t)(fm1_ms - pick_k4_until) < 0;   /* KNOB BANK: picker pinned, K4 turning */
     smk_pad_pick = (uint16_t)(pick_shown() ? 0xFFFFu : trkpad_on() ? TRKPAD_MASK : 0u);   /* (these pads: no notes) */
+    smk_pad_grid = (uint8_t)padgrid_on();          /* (steps and tiles: reading order) */
 #else
     fm1_led[SMK_BTN_KNOB_BANK] = ui.menu != 0;     /* KNOB BANK lit while the menu is up */
 #endif
@@ -320,7 +321,7 @@ static void ui_leds(void)
         } else if (ui.layer == LY_SONG) {          /* SAVE held: slots A..D used green, free white; store armed red */
             uint32_t ready = arrangement_ready();
             for (c = 0; c < 16u; c++) {
-                uint32_t p = SMK_PAD_OF_WHITE(c), i = c & 3u, used = (ready >> i) & 1u;
+                uint32_t p = SMK_PAD_OF_KEY(c), i = c & 3u, used = (ready >> i) & 1u;
                 if (c < 8u) {
                     int playing = c < 4u && live_sec == (int8_t)i && !arrangement_clock.running;
                     if (c >= 4u && sec_armed == i + 1u)
@@ -340,12 +341,22 @@ static void ui_leds(void)
                 }
             }
         } else {                                   /* the track's colour: lit bright; playing, its steps normal */
+#if MAKKURO37
+            if (ui.layer == LY_PLAY && !kb_grid) { /* playing: the steps in reading order, the notes low at the bottom */
+                uint32_t nt = fm1_in.notes | (is_drum(TSEL) || lights_notes ? keys_sounding(TSEL) : 0u), g = keys_guide();
+                uint32_t head = song.playing ? TSEL->seq_idx % 16u : 16u, sh;
+                for (c = 0; c < 16u; c++) {        /* c: pad = step */
+                    sh = c == head || (nt >> key_of_white(SMK_WHITE_OF_PAD(c))) & 1u ? 1u : (g >> key_of_white(c)) & 1u ? 3u : 8u;
+                    padled_set(c, (uint8_t)(col[0] >> sh), (uint8_t)(col[1] >> sh), (uint8_t)(col[2] >> sh));
+                }
+            } else
+#endif
             for (c = 0; c < 16u; c++) {
                 uint32_t id = LED_KEY(key_of_white(c)), sh = nl[id] ? 1u : (ui.layer == LY_PLAY && dl[id]) ? 3u : 0u;
                 if (sh)
-                    padled_set(SMK_PAD_OF_WHITE(c), (uint8_t)(col[0] >> sh), (uint8_t)(col[1] >> sh), (uint8_t)(col[2] >> sh));
+                    padled_set(SMK_PAD_OF_KEY(c), (uint8_t)(col[0] >> sh), (uint8_t)(col[1] >> sh), (uint8_t)(col[2] >> sh));
                 else
-                    padled_set(SMK_PAD_OF_WHITE(c), 0, 0, 0);
+                    padled_set(SMK_PAD_OF_KEY(c), 0, 0, 0);
             }
 #if MAKKURO37
             if (trkpad_on())                       /* the track pads: their colours, the selected one bright */

@@ -102,6 +102,7 @@
 #include "ui_menu.c"
 #if BOARD_SMK37 && MAKKURO37
 #include "ui_trkpad.c"        /* Snoop37: the TRACKS screen's track pads */
+#include "ui_padgrid.c"       /* Snoop37: steps and tiles in reading order */
 #endif
 #include "ui_input.c"
 #if BOARD_SMK37 && MAKKURO37

@@ -71,6 +71,8 @@ $CC -O2 -w -Ibuild/gen -Ifirmware/src -Ifirmware/hal -o "$OUT/fbank_test" tests/
 run "Snoop37 FADER BANK screen: banks wrap, what each fader sets, closes by itself" "$OUT/fbank_test" "$OUT"
 $CC -O2 -w -Ibuild/gen -Ifirmware/src -Ifirmware/hal -o "$OUT/trkpad_test" tests/trkpad_test.c -lm
 run "Snoop37 TRACKS track pads: pads 0 1 8 9 select tracks 1..4; KNOB BANK lit on a PRESETS detent" "$OUT/trkpad_test" "$OUT"
+$CC -O2 -w -Ifirmware/hal -o "$OUT/padgrid_test" tests/padgrid_test.c
+run "Snoop37 pads: steps and tiles in reading order, notes low at the bottom" "$OUT/padgrid_test"
 # no divide by 0 (the FM-1 runs with the div0 trap off, hal/fm1_irq.h: a real one would give a wrong value
 # silently): the UI fuzz, the sequencer, the projects and a minute of random live use, with UBSan
 UBSAN="${CC_UB:-cc} -O1 -w -fsanitize=integer-divide-by-zero -fno-sanitize-recover=integer-divide-by-zero -Ibuild/gen -Ifirmware/src -Ifirmware/hal"
