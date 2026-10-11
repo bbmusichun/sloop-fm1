@@ -1,16 +1,16 @@
-# Controls: FM-1 → SLOOP → SMK-37 Pro → Makkuro37
+# Controls: FM-1 → SLOOP → SMK-37 Pro → Snoop37
 
 Kept up to date with the firmware (this repository, branch `main`).
-"Makkuro37 (now)" = what is on the keyboard today; "Proposal" = suggested, not built yet.
+"Snoop37 (now)" = what is on the keyboard today; "Proposal" = suggested, not built yet.
 
 ## Knobs, faders, wheels
 
-| FM-1 printed | SLOOP function | SMK-37 Pro printed | Makkuro37 (now) | Proposal |
+| FM-1 printed | SLOOP function | SMK-37 Pro printed | Snoop37 (now) | Proposal |
 |---|---|---|---|---|
 | MASTER (pot, top left) | output volume | K1 | master volume (virtual pot, 24 steps a click) | cap: "M" |
 | SELECT (big encoder) | tempo (TRACKS), page ◀▶, visualiser style, menu section | K2 | SELECT: tempo / pages | cap: "T" |
 | ALGORITHM | select track 1–4 | K3 | track | cap: "4" |
-| PRESETS | sound (synth) / kit (drums) | K4 | sound / kit | cap: note symbol |
+| PRESETS | sound (synth) / kit (drums) | K4 | sound / kit, the pad picker shows them | cap: note symbol |
 | KNOB 1 | dial 1 on screen (blue) | K5 | dial 1 | cap: blue 40,124,255 |
 | KNOB 2 | dial 2 on screen (green) | K6 | dial 2 | cap: green 30,204,112 |
 | KNOB 3 | dial 3 on screen (yellow) | K7 | dial 3 | cap: yellow 255,198,24 |
@@ -22,7 +22,7 @@ Kept up to date with the firmware (this repository, branch `main`).
 
 ## Buttons
 
-| FM-1 printed | SLOOP tap | SLOOP hold (layer) | SMK-37 Pro printed | Makkuro37 (now) | Proposal |
+| FM-1 printed | SLOOP tap | SLOOP hold (layer) | SMK-37 Pro printed | Snoop37 (now) | Proposal |
 |---|---|---|---|---|---|
 | PLAY | start / stop (LED flashes on every beat) | — | SEQ PLAY | PLAY | — |
 | REC | record / arm | 2 s: clear track | SEQ REC | REC | — |
@@ -38,14 +38,14 @@ Kept up to date with the firmware (this repository, branch `main`).
 | SAVE | song screen / save | song layer (slots A–D: used green, free white) | BT | SAVE (SLOOP has no Bluetooth) | — |
 | OCT− | octave down | drums: ghost hits | OCTAVE− | OCT− | — |
 | OCT+ | octave up | drums: hard hits | OCTAVE+ | OCT+ | — |
-| — | — | — | KNOB BANK | free | K1–K4 second set (the page's next 4 parameters) |
-| — | — | — | FADER BANK | fader bank A→B→C→D (shown on screen; LED lit off bank A) | — |
+| — | — | — | KNOB BANK | pins the pad sound picker | — |
+| — | — | — | FADER BANK | the fader bank screen on / off (K2 turns A→B→C→D; LED lit off bank A) | — |
 | — | — | — | < | page back (as SELECT, never tempo); SEQ held: step page back; visualiser: style | — |
 | — | — | — | > | page forward; SEQ held: step page forward; visualiser: style | — |
 
 ## Keys and pads
 
-| FM-1 | SLOOP | SMK-37 Pro | Makkuro37 (now) |
+| FM-1 | SLOOP | SMK-37 Pro | Snoop37 (now) |
 |---|---|---|---|
 | 27 keys F3–G5 | notes; in layers: tiles (steps, FX, mix…) | keys F3–G5 (middle 27) | same, with velocity |
 | — | — | keys C3–E3 (lowest 5) | synth tracks: notes; drum track: C3 kick, D3 snare, E3 hat (black keys = left white key) |
