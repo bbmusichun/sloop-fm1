@@ -37,7 +37,7 @@ MAXDATA = 512
 BLOCKS, BLK, KEEP = 20, 0x30, 0x2F         # BLOCKS: the identity blocks (more may follow, see block_count)
 MAX_BLOCKS = 64
 LOADER_MARK = b"FELUCCA-LOADER-1"
-PORT_RE = re.compile(r"fm-1|smk|felucca|melodee|fomni|x0x|ota|composite|sinco|usb-midi", re.I)   # never probe other gear
+PORT_RE = re.compile(r"fm-1|smk|felucca|melodee|fomni|x0x|makkuro|ota|composite|sinco|usb-midi", re.I)   # never probe other gear
 OWN_LOADER_RE = re.compile(r"ota-(FM-1|SMK-37 Pro)_9\d\d", re.I)               # SLOOP's own update loader
 
 # seconds; the tests shorten them
