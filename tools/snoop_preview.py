@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 M. Geisler (makkuro) <mcgeisler@gmail.com>
-"""Host preview of the MAKKURO37 boot splash (firmware/src/makkuro_splash.c).
+"""Host preview of the SNOOP37 boot splash (firmware/src/snoop_splash.c).
 
 Compiles the splash's drawing code with the host C compiler (MK_HOST: no LCD, no timers), renders
 whole frames at the given times and writes them as PNG files (Pillow, 1x and --scale), a contact sheet,
 the update screens (ota_<step>.png), an animated GIF of the intro (intro.gif, 25 frames/s) and the boot
-jingle (firmware/src/makkuro_jingle.c) as jingle.wav (44.1 kHz, at the master volume's middle, through a
+jingle (firmware/src/snoop_jingle.c) as jingle.wav (44.1 kHz, at the master volume's middle, through a
 simple stand-in for SLOOP's reverb) plus jingle_skip.wav (a key pressed at 2 s).
 
-    python3 tools/makkuro_preview.py OUTDIR [--ms 0,400,...] [--scale 2] [--no-gif] [--no-wav]
+    python3 tools/snoop_preview.py OUTDIR [--ms 0,400,...] [--scale 2] [--no-gif] [--no-wav]
 """
 import argparse
 import math
@@ -21,7 +21,7 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / "firmware" / "src" / "makkuro_splash.c"
+SRC = ROOT / "firmware" / "src" / "snoop_splash.c"
 
 HARNESS = r"""
 #include <math.h>
@@ -43,9 +43,9 @@ static void str_cpy(char *d, const char *s, unsigned n)
 }
 #define RGB(r, g, b) ((uint16_t)((((r) >> 3) << 11) | (((g) >> 2) << 5) | ((b) >> 3)))
 static const uint16_t TE_COL[4] = {RGB(40, 124, 255), RGB(30, 204, 112), RGB(255, 198, 24), RGB(255, 98, 26)};
-#include "makkuro_jingle.c"
-#include "makkuro_splash.c"
-#include "makkuro_vis.c"
+#include "snoop_jingle.c"
+#include "snoop_splash.c"
+#include "snoop_vis.c"
 static uint16_t strip[240 * MK_SH], pool[6720];
 /* a visualiser frame f of style v, fed with made-up music (120 BPM at 15 frames/s) */
 static uint32_t vis_feed(int v, int f)
@@ -113,7 +113,7 @@ JINGLE = r"""
 static int16_t SINE[1025];
 static void fm1_irq_off(void) {}
 static void fm1_irq_on(void) {}
-#include "makkuro_jingle.c"
+#include "snoop_jingle.c"
 /* a Schroeder reverb as a stand-in for SLOOP's (fx.c): 4 damped combs, 2 all-passes */
 static float cb[4][2000], ap[2][600], cl[4];
 static const int CL[4] = {1557, 1617, 1491, 1422}, AL[2] = {556, 225};
@@ -183,7 +183,7 @@ static void lcd_fill(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint16_t c)
                 fb[(y + j) * 240 + x + i] = (uint16_t)(c >> 8 | c << 8);
 }
 #include "gfx.c"
-#include "makkuro_theme.h"
+#include "snoop_theme.h"
 static const uint16_t TE_COL[4] = {RGB(40, 124, 255), RGB(30, 204, 112), RGB(255, 198, 24), RGB(255, 98, 26)};
 #define H_HEAD 20
 int main(void)
@@ -309,7 +309,7 @@ def main():
     for k, o in enumerate(otas):
         save(frame(len(times) + k), "ota_" + o[1:].replace(",", "_").replace("-", "m"))
     base = len(times) + len(otas)
-    for v, name in ((1, "makkuro"), (2, "waterfall")):
+    for v, name in ((1, "snoop"), (2, "waterfall")):
         g = [frame(base + (v - 1) * 40 + k) for k in range(40)]
         save(g[-1], "vis_" + name)
         g[0].save(a.outdir / f"vis_{name}.gif", save_all=True, append_images=g[1:], duration=67, loop=0)

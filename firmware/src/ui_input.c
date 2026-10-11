@@ -283,7 +283,7 @@ static void ui_leds(void)
         fm1_led[c] = nl[c];
     smk_pad_piano = ui.layer == LY_SCALE;          /* SCALE held: the pads are a little piano (smk_input.h) */
     fm1_led[SMK_BTN_FADER_BANK] = smk_fbank != 0;  /* FADER BANK lit off bank A */
-#if MAKKURO37
+#if SNOOP37
     fm1_led[SMK_BTN_KNOB_BANK] = pick_pin || (int32_t)(fm1_ms - pick_k4_until) < 0;   /* KNOB BANK: picker pinned, K4 turning */
     smk_pad_pick = (uint16_t)(pick_shown() ? 0xFFFFu : 0u);   /* (these pads: no notes) */
     smk_pad_grid = (uint8_t)padgrid_on();          /* (steps and tiles: reading order) */
@@ -298,7 +298,7 @@ static void ui_leds(void)
     if ((int32_t)(fm1_ms - padled_hold_until) >= 0) {   /* the pads. Off is off: no glow layers */
         static const uint8_t PAL[NTRK][3] = {{40, 124, 255}, {30, 204, 112}, {255, 198, 24}, {255, 98, 26}};   /* the screen's track colours (TE_COL) */
         const uint8_t *col = PAL[song.sel % NTRK];
-#if MAKKURO37
+#if SNOOP37
         if (pick_shown())
             pick_leds();
         else
@@ -341,7 +341,7 @@ static void ui_leds(void)
                 }
             }
         } else {                                   /* the track's colour: lit bright; playing, its steps normal */
-#if MAKKURO37
+#if SNOOP37
             if (ui.layer == LY_PLAY && !kb_grid) { /* playing: the steps in reading order, the notes low at the bottom */
                 uint32_t nt = fm1_in.notes | (is_drum(TSEL) || lights_notes ? keys_sounding(TSEL) : 0u), g = keys_guide();
                 uint32_t head = song.playing ? TSEL->seq_idx % 16u : 16u, sh;
@@ -930,7 +930,7 @@ static void ui_input(void)
     if (pressed & (1u << SMK_BTN_LEFT | 1u << SMK_BTN_RIGHT)) {   /* < >: SEQ held: the step pages; the visualiser:
                                                                 * its style; else the pages, as SELECT (never the tempo) */
         int32_t d = (pressed >> SMK_BTN_RIGHT) & 1u ? 1 : -1;
-#if MAKKURO37
+#if SNOOP37
         if (pick_shown())
             pick_turn(d);
         else
@@ -945,7 +945,7 @@ static void ui_input(void)
         }
         ui.force = 1;
     }
-#if MAKKURO37
+#if SNOOP37
     if (pressed & 1u << SMK_BTN_FADER_BANK) {                   /* FADER BANK: its screen on / off (ui_fbank.c) */
         if (fb_shown())
             fb_close(), ui.force = 1;
@@ -969,7 +969,7 @@ static void ui_input(void)
     uint32_t home = btn_hold(&ui.home_t0, B_HOME, now, 1);
     int32_t s;
     int layered;
-#if BOARD_SMK37 && MAKKURO37
+#if BOARD_SMK37 && SNOOP37
     if (pressed & 1u << SMK_BTN_KNOB_BANK)              /* KNOB BANK: pins the pad picker open / closes it */
         pick_pin_toggle();
     {
@@ -1116,7 +1116,7 @@ static void ui_input(void)
             TDRUM->p[P_E0] = (int16_t)clamp(TDRUM->p[P_E0] + s, 0, DRUM_KITS - 1);
         else if (total)
             preset_go((uint32_t)(((int32_t)cur + s % (int32_t)total + (int32_t)total) % (int32_t)total));
-#if BOARD_SMK37 && MAKKURO37
+#if BOARD_SMK37 && SNOOP37
         pick_open_tmp();                                /* the pad picker, a few seconds, at this sound's page */
 #endif
     }

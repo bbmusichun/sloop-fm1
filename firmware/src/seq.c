@@ -1605,7 +1605,7 @@ static void ext_keys_block(void)
 }
 #endif
 
-#if BOARD_SMK37 && MAKKURO37
+#if BOARD_SMK37 && SNOOP37
 /* Snoop37: the pad picker's preview (ui_pick.c), a short note on the selected synth track */
 static volatile uint8_t pick_aud_req;            /* note + 1, 0 = none */
 static uint8_t pick_aud_note, pick_aud_trk;      /* sounding: note + 1 */
@@ -1635,7 +1635,7 @@ static void keyboard_block(void)
     audition_block();
 #if BOARD_SMK37
     ext_keys_block();
-#if MAKKURO37
+#if SNOOP37
     pick_aud_block();
 #endif
 #endif

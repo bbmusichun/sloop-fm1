@@ -105,7 +105,7 @@ static const uint16_t LIGHTS_NS[LIGHTS_N] = {0u, 500u, 1000u, 2000u};   /* the b
                                                 * LED ~95 us, the glow (landmarks) 4 us (fm1_input.h) */
 static uint8_t usb_serial;                      /* menu USB SERIAL: 1 = the serial console presented (usb.c) */
 static uint8_t vis_style;                       /* the visualiser's style, 0..11 (ui_vis.c) */
-#if MAKKURO37
+#if SNOOP37
 enum { BOOT_SNOOP37, BOOT_SLOOP, BOOT_NONE, BOOT_N };
 static uint8_t boot_logo;                       /* menu BOOT LOGO (lights word bits 21..22; old data: 0) */
 #endif
@@ -115,7 +115,7 @@ static uint32_t lights_word(void)
            (uint32_t)(rec_tempo != 0u) << 9 | (uint32_t)(rec_count != 0u) << 10 | (uint32_t)(usb_full != 0u) << 11 |
            (uint32_t)(lights_sync % 3u) << 12 | (uint32_t)(lights_mout != 0u) << 14 | (uint32_t)(lights_min != 0u) << 15 |
            (uint32_t)(usb_serial != 0u) << 16 | (uint32_t)(vis_style % VIS_STYLES) << 17
-#if MAKKURO37
+#if SNOOP37
            | (uint32_t)(boot_logo % BOOT_N) << 21
 #endif
         ;
@@ -133,7 +133,7 @@ static void lights_from_word(uint32_t w)
     lights_min = (uint8_t)((w >> 15) & 1u);     /* GLO > SYSTEM > IN (seq.c) */
     usb_serial = (uint8_t)((w >> 16) & 1u);
     vis_style = (uint8_t)(((w >> 17) & 15u) % VIS_STYLES);   /* the visualiser (ui_vis.c); 0 in 2.3 = OSCILLOSCOPE */     /* menu USB SERIAL (usb.c usb_cdc_on, at the next start); 0 in 2.3 = OFF */
-#if MAKKURO37
+#if SNOOP37
     boot_logo = (uint8_t)(((w >> 21) & 3u) % BOOT_N);
 #endif
 }

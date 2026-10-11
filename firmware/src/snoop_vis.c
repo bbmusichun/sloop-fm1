@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 M. Geisler (makkuro) <mcgeisler@gmail.com> */
-/* MAKKURO37: two visualiser styles (ui_vis.c calls mkv_draw for them), drawn with the boot splash's renderer
- * (makkuro_splash.c) in its strips:
- *   MAKKURO    the doghouse: a roof key presses down and lights in a track's colour when that track plays a
+/* SNOOP37: two visualiser styles (ui_vis.c calls mkv_draw for them), drawn with the boot splash's renderer
+ * (snoop_splash.c) in its strips:
+ *   SNOOP    the doghouse: a roof key presses down and lights in a track's colour when that track plays a
  *              note (the note's pitch class picks the key), the dog's ear and tail go with the drums, the
  *              sun breathes with the master, the mountains are the live spectrum; the floor runs at the tempo
  *   WATERFALL  the oscilloscope as a stack of its past traces going back to the horizon (each older one

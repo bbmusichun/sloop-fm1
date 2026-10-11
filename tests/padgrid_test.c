@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
-/* Snoop37 pads (firmware/hal/smk_input.h, MAKKURO37): the step grid in reading order (top-left = step 1),
+/* Snoop37 pads (firmware/hal/smk_input.h, SNOOP37): the step grid in reading order (top-left = step 1),
  * notes low at the bottom (bottom-left = the lowest). Built -O2 (the IRQ lock's asm is left out). */
 #define BOARD_SMK37 1
-#define MAKKURO37 1
+#define SNOOP37 1
 #include "smk_input.h"
 #include <stdio.h>
 static int fails;

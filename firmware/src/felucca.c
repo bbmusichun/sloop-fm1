@@ -18,11 +18,11 @@
 #endif
 #include "fm1_lcd_hw.h"
 #include "felucca_tables.h"
-#ifndef MAKKURO37
-#define MAKKURO37 0              /* 1: the MAKKURO37 boot splash and update screens (makkuro_splash.c) */
+#ifndef SNOOP37
+#define SNOOP37 0                /* 1: the SNOOP37 boot splash and update screens (snoop_splash.c) */
 #endif
-#if MAKKURO37
-#include "makkuro_theme.h"       /* the MAKKURO37 name on the screens */
+#if SNOOP37
+#include "snoop_theme.h"         /* the SNOOP37 name on the screens */
 #else
 #define BRAND_NAME "SLOOP"
 #define BRAND_SAIL_X 96
@@ -43,8 +43,8 @@
 #include "params.c"
 #include "voice.c"
 #include "slicer.c"          /* per-track SLICER insert, used by fx.c */
-#if MAKKURO37
-#include "makkuro_jingle.c"  /* the boot jingle's synth (mixed in by fx.c mix_block) */
+#if SNOOP37
+#include "snoop_jingle.c"    /* the boot jingle's synth (mixed in by fx.c mix_block) */
 #endif
 #include "fx.c"
 #ifndef FELUCCA_OTA
@@ -93,18 +93,18 @@
 #include "ui_song.c"
 #include "ui_studio.c"
 #include "icons.c"           /* parameter icons (FELUCCA_ICONS), used by ui_draw.c */
-#if BOARD_SMK37 && MAKKURO37
+#if BOARD_SMK37 && SNOOP37
 #include "ui_pick.c"          /* Snoop37: the pad sound picker */
 #endif
 #include "ui_draw.c"
 #include "ui_vis.c"           /* the full-screen visualiser (HOME on HOME, 2.4) */
 #include "ui_layers.c"       /* hold a function button: what the keys and knobs do (TE style) */
 #include "ui_menu.c"
-#if BOARD_SMK37 && MAKKURO37
+#if BOARD_SMK37 && SNOOP37
 #include "ui_padgrid.c"       /* Snoop37: steps and tiles in reading order */
 #endif
 #include "ui_input.c"
-#if BOARD_SMK37 && MAKKURO37
+#if BOARD_SMK37 && SNOOP37
 #include "ui_fbank.c"         /* Snoop37: the FADER BANK screen */
 #endif
 #ifndef FELUCCA_FLASH
@@ -195,8 +195,8 @@ static int ota_prog(uint32_t off, const void *p, uint32_t n)
     return fl_write(off, p, n);
 }
 static int ota_fread(uint32_t off, void *p, uint32_t n) { return st_read(off, p, n); }
-#if MAKKURO37
-static void makkuro_ota(uint32_t step, int32_t code);
+#if SNOOP37
+static void snoop_ota(uint32_t step, int32_t code);
 #endif
 static void ota_show(uint32_t step, int32_t code)
 {
@@ -207,8 +207,8 @@ static void ota_show(uint32_t step, int32_t code)
 #endif
     char b[24];
     if (recovery_active) return;             /* keep polled USB alive during OTA */
-#if MAKKURO37
-    makkuro_ota(step, code);                 /* (makkuro_splash.c) */
+#if SNOOP37
+    snoop_ota(step, code);                   /* (snoop_splash.c) */
     return;
 #endif
     lcd_fill(0, 0, 240, 240, C_BLACK);
@@ -250,8 +250,8 @@ static void ota_commit(const uint8_t *parm)
 #include "recovery.c"        /* early, polled USB updater; no synth or settings */
 #endif
 #include "splash.c"          /* SLOOP boot logo (build/gen/sloop_logo.h) */
-#if MAKKURO37
-#include "makkuro_splash.c"  /* animated MAKKURO37 boot splash instead of the logo */
-#include "makkuro_vis.c"     /* its visualiser styles (ui_vis.c) */
+#if SNOOP37
+#include "snoop_splash.c"    /* animated SNOOP37 boot splash instead of the logo */
+#include "snoop_vis.c"       /* its visualiser styles (ui_vis.c) */
 #endif
 #include "main.c"

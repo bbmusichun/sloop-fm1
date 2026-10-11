@@ -102,13 +102,13 @@ static const uint8_t SMK_WHITE_NOTE[SMK_NPAD] = {0, 2, 4, 6, 7, 9, 11, 12, 14, 1
 static const int8_t SMK_PIANO_NOTE[SMK_NPAD] = {7, 9, 11, 12, 14, 16, 18, 19, 8, 10, -1, 13, 15, 17, -1, 20};
 static volatile uint8_t smk_pad_piano;
 static uint8_t smk_pad_note[SMK_NPAD];   /* the note key a pad pressed (+1; 0 = none): its release ends that one */
-#if MAKKURO37
+#if SNOOP37
 static volatile uint16_t smk_pad_pick;   /* Snoop37: pads that go to the UI (picker, TRACKS track pads): a hit sets its bit here, no note */
 static volatile uint16_t smk_pick_hits;  /* bit per hardware pad */
 static volatile uint8_t smk_pad_grid;    /* Snoop37: the pads are a 1..16 grid (steps, tiles): white key w = pad w */
 #endif
 #define SMK_WHITE_OF_PAD(p) ((p) < 8u ? (p) + 8u : (p) - 8u)
-#if MAKKURO37
+#if SNOOP37
 #define SMK_PAD_OF_KEY(w) (smk_pad_grid ? (w) : SMK_PAD_OF_WHITE(w))   /* white key -> pad, as the pads are now */
 #else
 #define SMK_PAD_OF_KEY(w) SMK_PAD_OF_WHITE(w)
@@ -446,14 +446,14 @@ static void fm1__frame(void)
 
 static void smk__padq(uint32_t pad, uint32_t vel)     /* a pad hit (vel) or release (0): its white key */
 {
-#if MAKKURO37
+#if SNOOP37
     int32_t n0 = smk_pad_piano ? SMK_PIANO_NOTE[pad] : (int32_t)SMK_WHITE_NOTE[smk_pad_grid ? pad : SMK_WHITE_OF_PAD(pad)];
 #else
     int32_t n0 = smk_pad_piano ? SMK_PIANO_NOTE[pad] : (int32_t)SMK_WHITE_NOTE[SMK_WHITE_OF_PAD(pad)];
 #endif
     uint32_t n, bit;
     if (vel) {
-#if MAKKURO37
+#if SNOOP37
         if ((smk_pad_pick >> pad) & 1u) {
             smk_pick_hits |= (uint16_t)(1u << pad);
             return;
@@ -651,7 +651,7 @@ static uint32_t fm1_input_note_edges(void)
     return p;
 }
 
-#if MAKKURO37
+#if SNOOP37
 static uint32_t smk_pick_take(void)             /* the pads hit for the picker since the last call */
 {
     uint32_t k = fm1__lock(), h = smk_pick_hits;

@@ -225,11 +225,11 @@ static void fm1_main(void)
 #endif
     settings_init();
     lcd_init();
-#if MAKKURO37
+#if SNOOP37
     if (boot_logo == BOOT_SLOOP)                        /* (menu BOOT LOGO) */
         sloop_splash();
     else
-        makkuro_splash_bg();                            /* the MAKKURO37 splash (makkuro_splash.c) */
+        snoop_splash_bg();                              /* the SNOOP37 splash (snoop_splash.c) */
 #else
     sloop_splash();                                     /* the SLOOP logo (splash.c) */
 #endif
@@ -273,9 +273,9 @@ static void fm1_main(void)
         panel_setup();                        /* OCT- + OCT+ held at power-on */
         settings_save();
     }
-#if MAKKURO37
+#if SNOOP37
     if (boot_logo == BOOT_SNOOP37)
-        makkuro_splash();                               /* animated, ~5 s, fades into the UI; a key ends it */
+        snoop_splash();                                 /* animated, ~5 s, fades into the UI; a key ends it */
     else {
         if (boot_logo == BOOT_SLOOP)
             fm1_delay_ms(900);

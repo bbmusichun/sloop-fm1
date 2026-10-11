@@ -6,7 +6,7 @@
  * its row), PRESETS moves the cursor; OCT+ steps the cursor's setting round or opens it (CALIBRATION, ABOUT),
  * OCT- closes (from ABOUT: back to the section). */
 /* ------------------------------------------------------------ menu --- */
-#if MAKKURO37
+#if SNOOP37
 enum { MI_COLOR, MI_ZOOM, MI_LIGHTS, MI_KEYS, MI_NOTES, MI_LOWCUT, MI_USB, MI_SERIAL, MI_BOOT, MI_PANEL, MI_ABOUT, MI_COUNT };
 static const char *const MI_NAME[MI_COUNT] = {"COLOR", "ZOOM", "LIGHTS", "KEYS", "NOTES", "SPEAKER LOWCUT", "USB AUDIO",
                                               "USB SERIAL", "BOOT LOGO", "HARDWARE CALIBRATION", "ABOUT"};
@@ -50,7 +50,7 @@ static const char *mi_value(uint32_t i, uint16_t *c)
     case MI_LOWCUT: return settings.lowcut ? "ON" : "OFF";
     case MI_USB: return usb_full ? "FULL" : "MASTER";
     case MI_SERIAL: return usb_serial ? "ON" : "OFF";
-#if MAKKURO37
+#if SNOOP37
     case MI_BOOT: return BOOT_NAME[boot_logo % BOOT_N];
 #endif
     default:
@@ -65,7 +65,7 @@ static void draw_menu(void)
     uint32_t sig = ui.menu * 7u + ui.menu_sel * 131u + settings.palette * 1009u + settings.lowcut * 7919u +
                    settings.zoom * 104729u + lights_lvl * 1299709u + lights_keys * 15485863u +
                    lights_notes * 32452843u + usb_full * 49979687u + usb_serial * 86028121u;
-#if MAKKURO37
+#if SNOOP37
     sig += boot_logo * 122949829u;
 #endif
     if (!ui.force && sig == ui.menu_sig)
@@ -194,7 +194,7 @@ static void mi_set(uint32_t i, int32_t s)
     case MI_NOTES:
         lights_notes = (uint8_t)(s > 0 ? 1u : s < 0 ? 0u : !lights_notes);
         break;
-#if MAKKURO37
+#if SNOOP37
     case MI_BOOT:                                      /* SNOOP37 / SLOOP / NONE; OCT+ steps round */
         if (s > 0 && boot_logo + 1u < BOOT_N)
             boot_logo++;

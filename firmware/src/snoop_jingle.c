@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 M. Geisler (makkuro) <mcgeisler@gmail.com> */
-/* MAKKURO37 boot jingle: a tiny synth of its own, mixed in the audio ISR (fx.c mix_block, before the buses:
+/* SNOOP37 boot jingle: a tiny synth of its own, mixed in the audio ISR (fx.c mix_block, before the buses:
  * dry into the mix, a send into SLOOP's reverb, then the master volume), independent of the project's sounds.
  * A cinematic "deep note": four voices start as a quiet cluster wobbling around G3..D4, glide apart (ease in
  * and out, in cents) into a wide Dmaj9 (D2, F#3, C#4, E4) while swelling, bloom when the dog lands and the
@@ -14,16 +14,16 @@
 
 #define MKJ_NV 4
 #define MKJ_LEN 5200u              /* ms, as the splash */
-#define MKJ_END 4830               /* everything fades out from here (makkuro_splash.c MK_FADE) */
+#define MKJ_END 4830               /* everything fades out from here (snoop_splash.c MK_FADE) */
 static const uint32_t MKJ_SEMI[12] = {    /* phase increments of C9..B9 at 44.1 kHz */
     815363807u, 863847862u, 915214929u, 969636441u, 1027294024u, 1088380105u,
     1153098554u, 1221665363u, 1294309365u, 1371273005u, 1452813141u, 1539201906u};
 static const int16_t MKJ_FROM[MKJ_NV] = {5730, 5980, 5640, 6120};   /* cents: the cluster */
 static const int16_t MKJ_TO[MKJ_NV] = {3800, 5400, 6100, 6400};     /* D2 F#3 C#4 E4 */
 static const int16_t MKJ_LVL[MKJ_NV] = {150, 256, 230, 210};        /* (the bass at about half) */
-#define MKJ_K0 2028                /* the first key lands (makkuro_splash.c MK_K0 + MK_LAND), ms */
+#define MKJ_K0 2028                /* the first key lands (snoop_splash.c MK_K0 + MK_LAND), ms */
 #define MKJ_KD 70                  /* then every 70 ms */
-#define MKJ_PING 4230              /* the sun settles, the black keys land: the ping (makkuro_splash.c MK_PING) */
+#define MKJ_PING 4230              /* the sun settles, the black keys land: the ping (snoop_splash.c MK_PING) */
 static const uint8_t MKJ_BELL[12] = {69, 71, 74, 76, 78, 81, 83, 86, 88, 90, 93, 95};   /* A4 .. B6 */
 static volatile uint8_t mkj_band[12];   /* (the picture reads them: one byte each, no lock) */
 

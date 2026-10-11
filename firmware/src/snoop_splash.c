@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 M. Geisler (makkuro) <mcgeisler@gmail.com> */
-/* MAKKURO37 boot splash and update screens (build flag MAKKURO37): a neon doghouse whose roof is a piano
+/* SNOOP37 boot splash and update screens (build flag SNOOP37): a neon doghouse whose roof is a piano
  * keyboard, a Tron-style dog asleep on the ridge, a synthwave sun and a scrolling grid, the rainbow title in
  * a rounded neon-tube font. All procedural, fixed point, no bitmaps: a small 3D renderer (one camera for
  * the floor, the house, the keys and the dog; flat-shaded faces back to front, glowing edges, a reflection
@@ -8,7 +8,7 @@
  *
  * Everything is a function of the time t (ms): eased (easeOutExpo / easeOutCubic), sprung (a damped spring
  * table) and staggered. The intro (MK_LEN): CRT power-on, the grid rushes in and mountains rise on the
- * horizon (their ridge is the music: makkuro_jingle.c mkj_band), the house flies in from far away turning,
+ * horizon (their ridge is the music: snoop_jingle.c mkj_band), the house flies in from far away turning,
  * the 12 roof keys drop in with a bounce (each landing rings a bell and flashes its pad), the dog falls onto
  * the ridge (squash and stretch), the title lights letter by letter (flicker, RGB split, a shine sweep, a
  * starburst), a slow dolly; the sun jumps up behind the mountains and sinks back into place: the ping, and
@@ -19,8 +19,8 @@
  *
  * A frame is rendered in five strips of 240 x 48 px into the two halves of the canvas pool (cv_px, gfx.c),
  * alternately, so one strip renders while the last one goes out (~12 frames/s at 12 MHz SPI).
- * makkuro_splash_bg() draws the first frame at boot, makkuro_splash() animates (main.c), makkuro_ota() draws
- * one still frame per firmware-update step (felucca.c ota_show). tools/makkuro_preview.py renders it all on
+ * snoop_splash_bg() draws the first frame at boot, snoop_splash() animates (main.c), snoop_ota() draws
+ * one still frame per firmware-update step (felucca.c ota_show). tools/snoop_preview.py renders it all on
  * the host (MK_HOST). */
 
 #define MK_SH 48                   /* strip rows: 5 strips per frame, 2 strip buffers in cv_px */
@@ -36,7 +36,7 @@ static int32_t mk_hot = 110;       /* how white the core gets (0..255) */
 static uint32_t mk_mask = 0xFFFFFFu;          /* colour channels drawn (the RGB split) */
 static int32_t mk_shine = -9999;   /* the shine band (x + y / 2, px), -9999 = none */
 static uint8_t mk_ota, mk_step;    /* an update screen: its step (1..5, 9 = result) */
-static uint8_t mk_vis;             /* a visualiser style (makkuro_vis.c): 1 MAKKURO, 2 WATERFALL */
+static uint8_t mk_vis;             /* a visualiser style (snoop_vis.c): 1 SNOOP, 2 WATERFALL */
 static int32_t mk_sunr = 40, mk_vear, mk_vwag, mk_vyaw;   /* (the visualiser: the sun, the dog, the turn) */
 static uint32_t mk_vkcol[MK_NK];   /* (the visualiser: a key's colour, 0 = its own) */
 static int16_t mk_vkdy[MK_NK];     /* (and how far it is pressed) */
@@ -538,7 +538,7 @@ static void mk_camera(uint32_t t)
 
 /* ---- the sky: a synthwave sun rising over the horizon at the end, twinkling stars */
 #define MK_SUN 3900u               /* the sun jumps up (a spring: over, then back down) */
-#define MK_PING (MK_SUN + 330u)    /* it settles into place: the ping (makkuro_jingle.c MKJ_PING), the black keys */
+#define MK_PING (MK_SUN + 330u)    /* it settles into place: the ping (snoop_jingle.c MKJ_PING), the black keys */
 static void mk_sky(uint32_t t)
 {
     static const uint8_t STARS[] = {34, 52, 70, 88, 200, 44, 186, 98, 50, 140, 226, 128, 140, 58,
@@ -628,7 +628,7 @@ static void mk_floor(uint32_t t)
 }
 
 /* ---- mountains on the horizon (far behind the house, seen by the camera) whose ridge is the music: the
- * jingle's 12 pitch bands (makkuro_jingle.c mkj_band), high on the left, low on the right (under the sun) */
+ * jingle's 12 pitch bands (snoop_jingle.c mkj_band), high on the left, low on the right (under the sun) */
 static uint8_t mk_bandz[12];       /* smoothed: up fast, down slowly (per frame) */
 static void mk_band_tick(void)
 {
@@ -1414,7 +1414,7 @@ static void mk_render(uint16_t *buf, int32_t y0, uint32_t t)
 }
 
 /* ---- the lights: the pads (reading order: 0..7 the top row, 8..15 the bottom row; <= 60 a channel) and
- * the button LEDs, with the music (makkuro_jingle.c) and the pictures */
+ * the button LEDs, with the music (snoop_jingle.c) and the pictures */
 static uint32_t mk_pad(uint32_t r, uint32_t t)
 {
     uint32_t c = 0, k, pos;
@@ -1496,13 +1496,13 @@ static void mk_lights(uint32_t t)
 }
 
 /* the first frame, at boot (before the input and the timers run): black (the CRT is off) */
-static void makkuro_splash_bg(void)
+static void snoop_splash_bg(void)
 {
     lcd_fill(0, 0, 240, 240, 0);
 }
 
 /* the animation, MK_LEN ms; a new key, pad or button press ends it */
-static void makkuro_splash(void)
+static void snoop_splash(void)
 {
     uint32_t t0 = fm1_ms, t = 0, held = fm1_in.notes | fm1_in.buttons;
     mk_ota = 0;
@@ -1542,7 +1542,7 @@ static void makkuro_splash(void)
 }
 
 /* a firmware-update screen (felucca.c ota_show): one still frame; results stay 1.5 s */
-static void makkuro_ota(uint32_t step, int32_t code)
+static void snoop_ota(uint32_t step, int32_t code)
 {
     uint32_t r, c;
     mk_ota = 1;

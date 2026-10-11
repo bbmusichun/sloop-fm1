@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 M. Geisler (makkuro) <mcgeisler@gmail.com> */
-/* Snoop37 (build flag MAKKURO37): the names on the screens */
+/* Snoop37 (build flag SNOOP37): the names on the screens */
 #pragma once
 
 #define BRAND_NAME "SNOOP37"
