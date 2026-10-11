@@ -1,6 +1,10 @@
 # Snoop37
 
+<img src="docs/img/intro.webp" width="360" alt="The Snoop37 intro on the SMK-37 Pro display">
+
 **Alternative firmware for the M-Vave SMK-37 Pro, based on FM-1 firmwares.**
+
+**Install it from the browser:** [genkigenki.github.io/smk37](https://genkigenki.github.io/smk37/) (Chrome or Edge, USB cable, about a minute).
 
 Snoop37 turns the SMK-37 Pro MIDI keyboard into a stand-alone four-track groovebox: three synth tracks and a
 drum machine, synthesised, played and sequenced on the keyboard's own chip. It is a port of [SLOOP](https://github.com/isod89/sloop-fm1) 2.5 by **isod89**, the
@@ -16,6 +20,8 @@ Everything SLOOP does is described in [README-SLOOP.md](README-SLOOP.md) (SLOOP'
 [GUIDE.md](GUIDE.md) and [SLOOP.md](SLOOP.md).
 
 ## Features on the SMK-37 Pro
+
+![Snoop37 screens: the tracks, the visualiser, the Snoop visualiser, the system menu](docs/img/screens.png)
 
 Everything of SLOOP 2.5 (four tracks, the synthesis engines and sounds, drum kits, samples, song mode, parameter
 locks, USB audio, MIDI clock, the menus and screens), mapped onto the SMK-37 Pro's controls:
@@ -88,6 +94,11 @@ tests). One check, the static cost budget of `fm1_alnk0_irq`, fails the same way
 (a stale budget file upstream).
 
 ## Install
+
+**Easiest:** the web installer at [genkigenki.github.io/smk37](https://genkigenki.github.io/smk37/). Open it in
+Chrome or Edge, connect the SMK-37 Pro by USB, press Connect, then Install on Snoop37.
+
+From a build:
 
 1. Read [Safety](#safety) and back up the flash.
 2. Connect the SMK-37 Pro over USB and run SLOOP's installer (Python 3 with `mido` and `python-rtmidi`):
