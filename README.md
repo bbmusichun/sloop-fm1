@@ -14,15 +14,15 @@ SMK-37 share the same JieLi AC791N (WL82) chip, boot chain and update loader; on
 Snoop37 adds the SMK-37 board support (keys, pads, faders, wheels, knobs, display, LEDs, flash map,
 installer) and its own look and sound (animated intro and boot jingle).
 
-> **Status: experimental. Snoop37 0.2, based on SLOOP 2.6** (0.1.x was tested on an SMK-37 Pro). Unofficial
+> **Status: experimental. Snoop37 2.6, based on SLOOP 2.6** (0.1.x was tested on an SMK-37 Pro). Unofficial
 > firmware, not affiliated with or endorsed by M-Vave. Install at your own risk and read [Safety](#safety) first.
 
 Everything SLOOP does is described in [README-SLOOP.md](README-SLOOP.md) (SLOOP's own README),
 [GUIDE.md](GUIDE.md) and [SLOOP.md](SLOOP.md).
 
-## What's new in 0.2
+## What's new in 2.6
 
-Snoop37 0.2 moves to SLOOP 2.6 (changes: [CHANGES.md](CHANGES.md); SLOOP's own list:
+Snoop37 2.6 moves to SLOOP 2.6 (changes: [CHANGES.md](CHANGES.md); SLOOP's own list:
 [README-SLOOP.md](README-SLOOP.md#whats-new-in-26)). On the SMK-37 that brings:
 
 - **27 punch-in effects:** hold FX; the pads are the loops, stutter, tape stop and the rest as before, the black
@@ -37,12 +37,12 @@ Snoop37 0.2 moves to SLOOP 2.6 (changes: [CHANGES.md](CHANGES.md); SLOOP's own l
   a note's **LEN** and step velocity, **TEXTURE** (a looping bed under the mix), **live drum mutes** (PARA + a
   black key), step entry from a MIDI keyboard, Program Change, SAVE > PROJECT > ERASE, a bolder screen font and a
   look-ahead master limiter.
-- SYSTEM's about screen shows `0.2 / SLOOP 2.6`.
+- SYSTEM's about screen shows `2.6 (SLOOP 2.6)`.
 
 **After updating from 0.1.x, check two settings once:** HOME menu > SYSTEM > **BOOT LOGO**, and GLO > MIDI 2 >
 **IN** (the MIDI channel SLOOP listens on). SLOOP 2.6 stores the MIDI IN channel in the bits where 0.1.x kept the
 boot logo, so a 0.1.x BOOT LOGO of SLOOP or NONE comes back as SNOOP37 with IN = CH 1 or CH 2. Set both once and
-they stay. Projects, presets, samples and kits are kept; a project saved in 0.2 does not open in 0.1.x.
+they stay. Projects, presets, samples and kits are kept; a project saved in 2.6 does not open in 0.1.x.
 
 ## Features on the SMK-37
 

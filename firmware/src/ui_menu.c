@@ -109,7 +109,7 @@ static void draw_menu(void)
             cv_rect(BRAND_SAIL_X, 22, 16, 4, TE_COL[2]), cv_rect(BRAND_SAIL_X, 28, 20, 4, TE_COL[3]);
             cv_text(4, 36, &FONT_S, BRAND_BASED, C_AMB);
 #ifdef BRAND_VERSION
-            cv_text(4, 54, &FONT_S, BRAND_VERSION " / " FELUCCA_VERSION, C_HI);   /* "0.2 / SLOOP 2.6" */
+            cv_text(4, 54, &FONT_S, BRAND_VERSION " (" FELUCCA_VERSION ")", C_HI);   /* "2.6 (SLOOP 2.6)" */
 #else
             cv_text(4, 54, &FONT_S, FELUCCA_VERSION, C_HI);
 #endif
