@@ -18,6 +18,10 @@ export const sameKeyboard = (a, b) => a === b || (SMK_FAMILY.test(a) && SMK_FAMI
 // the update loader of SLOOP / Felucca packages ("ota-FM-1_9XX", "ota-SMK-37 Pro_9XX"). A device left in the update
 // mode of another firmware (the stock updater's loader) is never written: its loader may lay the image out differently.
 export const OUR_LOADER = (id) => /^ota-(FM-1|SMK-37 Pro|SMK-37 Elite|MKE-P37)_[789]\d\d$/i.test(id.text);
+// the MIDI ports the installer may probe (never other gear): the FM-1 / SMK-37 keyboards under SLOOP / Felucca ("Felucca"), under
+// CLIPPER ("Clipper", its sister firmware), under a firmware named after itself ("SLOOP"), the update loaders, and
+// the names Windows / macOS give the stock firmware
+export const FM1_PORT = /fm-1|smk|elite|mke-p37|starry|felucca|sloop|clipper|melodee|fomni|x0x|makkuro|snoop|vector|vox|ota|composite|sinco|usb-midi/i;
 
 // errors carry a code the pages translate: notfound, model, stopped, noloader, lost, noreturn,
 // mismatch (detail: the identity the device reports), badreq, foreign (detail: the loader's identity)
@@ -125,7 +129,7 @@ export class Updater {
     const outs = [...this.access.outputs.values()];
     for (const input of this.access.inputs.values()) {
       if (input.state === "disconnected") continue;
-      if (!/fm-1|smk|elite|mke-p37|starry|felucca|melodee|fomni|x0x|makkuro|snoop|vector|vox|ota|composite|sinco|usb-midi/i.test(input.name || "")) continue;   // never probe other gear
+      if (!FM1_PORT.test(input.name || "")) continue;   // never probe other gear
       const output = outs.find((o) => o.name === input.name) || (outs.length === 1 ? outs[0] : null);
       if (!output) continue;
       try { await input.open(); await output.open(); } catch (_) { continue; }
@@ -135,6 +139,12 @@ export class Updater {
       link.close();
     }
     return null;
+  }
+
+  // the MIDI inputs there are, for the "not found" message: " (MIDI: a, b)" (a port the installer skipped shows)
+  seen() {
+    const names = [...this.access.inputs.values()].filter((p) => p.state !== "disconnected").map((p) => p.name || "?");
+    return names.length ? ` (MIDI: ${names.join(", ")})` : " (MIDI: none)";
   }
 
   async waitFor(filter, ms) {
@@ -180,7 +190,7 @@ export class Updater {
   async install(image, product, onStep) {
     const step = onStep || (() => {});
     const dev = await this.find((id) => !IS_OTA(id));
-    if (!dev) throw fail("notfound", "FM-1 not found (USB cable, and no other app using it?)");
+    if (!dev) throw fail("notfound", "FM-1 not found (USB cable, and no other app using it?)", this.seen());
     const [model] = product.split("_");
     if (!sameKeyboard(dev.id.model, model)) { dev.link.close(); throw fail("model", `the device is ${dev.id.text}, the package is for ${product}`); }
     step("start", dev.id.text);
