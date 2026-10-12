@@ -1,17 +1,17 @@
 # Snoop37
 
-<img src="docs/img/intro.webp" width="360" alt="The Snoop37 intro on the SMK-37 Pro display">
+<img src="docs/img/intro.webp" width="360" alt="The Snoop37 intro on the SMK-37 display">
 
-**Alternative firmware for the M-Vave SMK-37 Pro, based on FM-1 firmwares.**
+**Alternative firmware for the M-Vave SMK-37 (SMK-37 Pro, Elite or MKE-P37), based on FM-1 firmwares.**
 
 **Install it from the browser:** [genkigenki.github.io/smk37](https://genkigenki.github.io/smk37/) (Chrome or Edge, USB cable, about a minute).
 
-Snoop37 turns the SMK-37 Pro MIDI keyboard into a stand-alone four-track groovebox: three synth tracks and a
+Snoop37 turns the SMK-37 MIDI keyboard into a stand-alone four-track groovebox: three synth tracks and a
 drum machine, synthesised, played and sequenced on the keyboard's own chip. It is a port of [SLOOP](https://github.com/isod89/sloop-fm1) 2.5 by **isod89**, the
 live groovebox firmware for the M-Vave FM-1, which in turn is based on
 [Felucca](https://github.com/hugelton/Felucca) by **Leo Kuroshita / Hügelton Instruments**. The FM-1 and the
-SMK-37 Pro share the same JieLi AC791N (WL82) chip, boot chain and update loader; only the panel wiring differs.
-Snoop37 adds the SMK-37 Pro board support (keys, pads, faders, wheels, knobs, display, LEDs, flash map,
+SMK-37 share the same JieLi AC791N (WL82) chip, boot chain and update loader; only the panel wiring differs.
+Snoop37 adds the SMK-37 board support (keys, pads, faders, wheels, knobs, display, LEDs, flash map,
 installer) and its own look and sound (animated intro and boot jingle).
 
 > **Status: experimental. Tested on an SMK-37 Pro.** Unofficial firmware, not affiliated with or endorsed by
@@ -19,12 +19,12 @@ installer) and its own look and sound (animated intro and boot jingle).
 Everything SLOOP does is described in [README-SLOOP.md](README-SLOOP.md) (SLOOP's own README),
 [GUIDE.md](GUIDE.md) and [SLOOP.md](SLOOP.md).
 
-## Features on the SMK-37 Pro
+## Features on the SMK-37
 
 ![Snoop37 screens: the tracks, the visualiser, the Snoop visualiser, the system menu](docs/img/screens.png)
 
 Everything of SLOOP 2.5 (four tracks, the synthesis engines and sounds, drum kits, samples, song mode, parameter
-locks, USB audio, MIDI clock, the menus and screens), mapped onto the SMK-37 Pro's controls:
+locks, USB audio, MIDI clock, the menus and screens), mapped onto the SMK-37's controls:
 
 - **37 velocity keys.** The middle 27 keys (F3–G5) are the FM-1's note keys (notes, steps, menus), now with
   velocity (the stock two-contact timing and the unit's own factory velocity curves). The 10 outer keys play notes on
@@ -55,15 +55,15 @@ locks, USB audio, MIDI clock, the menus and screens), mapped onto the SMK-37 Pro
   ranges (checked at compile time and again in the flash driver); the factory calibration, Bluetooth pairing and
   key_mac areas are never written.
 
-The full control map (FM-1 → SLOOP → SMK-37 Pro → Snoop37) is in [docs/CONTROLS.md](docs/CONTROLS.md).
+The full control map (FM-1 → SLOOP → SMK-37 → Snoop37) is in [docs/CONTROLS.md](docs/CONTROLS.md).
 Not used yet: the pedal jack, TRS MIDI OUT, pad pressure.
 
 ## Branches
 
 | Branch | What |
 | --- | --- |
-| `main` | Snoop37: SLOOP 2.5 + the SMK-37 Pro port + the Snoop37 intro, jingle and look |
-| `smk37-board` | SLOOP 2.5 + the SMK-37 Pro board support only (no Snoop37 additions): the base for porting other FM-1 firmwares (Felucca, X0X, FoMni, Melodee, ...) to the SMK-37 Pro. See [fm1-to-smk37](https://github.com/genkigenki/fm1-to-smk37) for the hardware facts and the porting guide |
+| `main` | Snoop37: SLOOP 2.5 + the SMK-37 port + the Snoop37 intro, jingle and look |
+| `smk37-board` | SLOOP 2.5 + the SMK-37 board support only (no Snoop37 additions): the base for porting other FM-1 firmwares (Felucca, X0X, FoMni, Melodee, ...) to the SMK-37. See [fm1-to-smk37](https://github.com/genkigenki/fm1-to-smk37) for the hardware facts and the porting guide |
 
 ## Build
 
@@ -81,7 +81,7 @@ sudo apt install python3-pil        # or: pip3 install Pillow
 # Snoop37 for the SMK-37 Pro -> build/sloop-smk37.fwsc (identity "SMK-37 Pro_900")
 BOARD=smk37 SNOOP37=1 sh build.sh
 
-# the plain SMK-37 Pro port, without the intro and jingle
+# the plain SMK-37 port, without the intro and jingle
 BOARD=smk37 sh build.sh
 
 # without BOARD: SLOOP for the FM-1 (build/felucca.fwsc), byte-identical to upstream SLOOP 2.5
@@ -89,30 +89,30 @@ sh build.sh
 ```
 
 `JIELI_TOOLCHAIN` and `AC79_SDK` override the default locations. The host tests run after an FM-1 build:
-`sh build.sh && sh tests/run_tests.sh` (they include the SMK-37 Pro flash-map, package, loader and installer
+`sh build.sh && sh tests/run_tests.sh` (they include the SMK-37 flash-map, package, loader and installer
 tests). One check, the static cost budget of `fm1_alnk0_irq`, fails the same way on unmodified SLOOP 2.5
 (a stale budget file upstream).
 
 ## Install
 
 **Easiest:** the web installer at [genkigenki.github.io/smk37](https://genkigenki.github.io/smk37/). Open it in
-Chrome or Edge, connect the SMK-37 Pro by USB, press Connect, then Install on Snoop37.
+Chrome or Edge, connect the SMK-37 by USB, press Connect, then Install on Snoop37.
 
 From a build:
 
 1. Read [Safety](#safety) and back up the flash.
-2. Connect the SMK-37 Pro over USB and run SLOOP's installer (Python 3 with `mido` and `python-rtmidi`):
+2. Connect the SMK-37 over USB and run SLOOP's installer (Python 3 with `mido` and `python-rtmidi`):
 
    ```sh
    python3 tools/fm1_install.py build/sloop-smk37.fwsc
    ```
 
-   It finds the SMK-37 Pro's MIDI port, checks the model and the package, asks the running firmware (the stock one
+   It finds the SMK-37's MIDI port, checks the model and the package, asks the running firmware (the stock one
    or Snoop37) to start the update loader and writes the package; then the keyboard restarts and the installed
-   identity is checked. The web installer in `docs/webapp/installer/` has the same SMK-37 Pro support.
+   identity is checked. The web installer in `docs/webapp/installer/` has the same SMK-37 support.
 3. Updating later works the same way. Projects, presets, samples and settings are kept.
 
-**Roll back to the stock firmware:** install the official SMK-37 Pro firmware with M-Vave's own updater
+**Roll back to the stock firmware:** install the official firmware for your model with M-Vave's own updater
 (M-UPGRADE), or pass the official package to the installer: `python3 tools/fm1_install.py --force
 SMK-37_Pro_016.fwsc` (it handles the stock package format). Snoop37 keeps the stock update identity, so the
 stock tools see the keyboard as usual.
@@ -143,7 +143,7 @@ third-party parts keep their own licenses (see [LICENSING.md](LICENSING.md) and 
   tools; this repository is a fork of SLOOP 2.5).
 - **Felucca** – Leo Kuroshita (@kurogedelic), Hügelton Instruments, <https://github.com/hugelton/Felucca> (the
   original open FM-1 firmware SLOOP is built on).
-- **SMK-37 Pro port and Snoop37** – genkigenki.
+- **SMK-37 port and Snoop37** – genkigenki.
 - The CC0 instrument samples are by Versilian Studios (see `assets/samples-cc0/ATTRIBUTION.txt`).
 
 M-Vave, SMK-37 Pro and FM-1 are names of their respective owners. This project is not affiliated with or endorsed by

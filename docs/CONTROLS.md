@@ -1,11 +1,11 @@
-# Controls: FM-1 → SLOOP → SMK-37 Pro → Snoop37
+# Controls: FM-1 → SLOOP → SMK-37 → Snoop37
 
 Kept up to date with the firmware (this repository, branch `main`).
 "Snoop37 (now)" = what is on the keyboard today; "Proposal" = suggested, not built yet.
 
 ## Knobs, faders, wheels
 
-| FM-1 printed | SLOOP function | SMK-37 Pro printed | Snoop37 (now) | Proposal |
+| FM-1 printed | SLOOP function | SMK-37 printed | Snoop37 (now) | Proposal |
 |---|---|---|---|---|
 | MASTER (pot, top left) | output volume | K1 | master volume (virtual pot, 24 steps a click) | cap: "M" |
 | SELECT (big encoder) | tempo (TRACKS), page ◀▶, visualiser style, menu section | K2 | SELECT: tempo / pages | cap: "T" |
@@ -22,7 +22,7 @@ Kept up to date with the firmware (this repository, branch `main`).
 
 ## Buttons
 
-| FM-1 printed | SLOOP tap | SLOOP hold (layer) | SMK-37 Pro printed | Snoop37 (now) | Proposal |
+| FM-1 printed | SLOOP tap | SLOOP hold (layer) | SMK-37 printed | Snoop37 (now) | Proposal |
 |---|---|---|---|---|---|
 | PLAY | start / stop (LED flashes on every beat) | — | SEQ PLAY | PLAY | — |
 | REC | record / arm | 2 s: clear track | SEQ REC | REC | — |
@@ -45,7 +45,7 @@ Kept up to date with the firmware (this repository, branch `main`).
 
 ## Keys and pads
 
-| FM-1 | SLOOP | SMK-37 Pro | Snoop37 (now) |
+| FM-1 | SLOOP | SMK-37 | Snoop37 (now) |
 |---|---|---|---|
 | 27 keys F3–G5 | notes; in layers: tiles (steps, FX, mix…) | keys F3–G5 (middle 27) | same, with velocity |
 | — | — | keys C3–E3 (lowest 5) | synth tracks: notes; drum track: C3 kick, D3 snare, E3 hat (black keys = left white key) |
