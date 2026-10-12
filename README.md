@@ -7,23 +7,48 @@
 **Install it from the browser:** [genkigenki.github.io/smk37](https://genkigenki.github.io/smk37/) (Chrome or Edge, USB cable, about a minute).
 
 Snoop37 turns the SMK-37 MIDI keyboard into a stand-alone four-track groovebox: three synth tracks and a
-drum machine, synthesised, played and sequenced on the keyboard's own chip. It is a port of [SLOOP](https://github.com/isod89/sloop-fm1) 2.5 by **isod89**, the
+drum machine, synthesised, played and sequenced on the keyboard's own chip. It is a port of [SLOOP](https://github.com/isod89/sloop-fm1) 2.6 by **isod89**, the
 live groovebox firmware for the M-Vave FM-1, which in turn is based on
 [Felucca](https://github.com/hugelton/Felucca) by **Leo Kuroshita / Hügelton Instruments**. The FM-1 and the
 SMK-37 share the same JieLi AC791N (WL82) chip, boot chain and update loader; only the panel wiring differs.
 Snoop37 adds the SMK-37 board support (keys, pads, faders, wheels, knobs, display, LEDs, flash map,
 installer) and its own look and sound (animated intro and boot jingle).
 
-> **Status: experimental. Tested on an SMK-37 Pro.** Unofficial firmware, not affiliated with or endorsed by
-> M-Vave. Install at your own risk and read [Safety](#safety) first.
+> **Status: experimental. Snoop37 0.2, based on SLOOP 2.6** (0.1.x was tested on an SMK-37 Pro). Unofficial
+> firmware, not affiliated with or endorsed by M-Vave. Install at your own risk and read [Safety](#safety) first.
+
 Everything SLOOP does is described in [README-SLOOP.md](README-SLOOP.md) (SLOOP's own README),
 [GUIDE.md](GUIDE.md) and [SLOOP.md](SLOOP.md).
+
+## What's new in 0.2
+
+Snoop37 0.2 moves to SLOOP 2.6 (changes: [CHANGES.md](CHANGES.md); SLOOP's own list:
+[README-SLOOP.md](README-SLOOP.md#whats-new-in-26)). On the SMK-37 that brings:
+
+- **27 punch-in effects:** hold FX; the pads are the loops, stutter, tape stop and the rest as before, the black
+  keys F#3–F#5 the eleven new ones (KILL LOW / MID / HIGH, REWIND, OCT UP, FLANGER, AUTO-PAN, FREEZE, LOOP 8T,
+  MONO, FADE OUT). REV THROW / ECHO THROW: FX + OCTAVE− / OCTAVE+.
+- **MIDI LEARN:** GLOBE + F#3, turn the SLOOP knob (K5–K8) you want, move a knob of your controller, GLOBE + F#3
+  again. HOME menu (PATCH held) > SYSTEM > MIDI LEARN CLEAR forgets them.
+- **Pitch bend and sustain pedal from MIDI IN** (range: GLO > MIDI 2 > BEND, 1–12 semitones). The SMK-37's own
+  pitch wheel keeps its ±7 semitones on the selected synth track.
+- **A MIDI channel per track** (GLO > MIDI, in and out) and **MIDI IN on one channel** (GLO > MIDI 2 > IN).
+- An **INSERT** effect on every track, **LFO 2** with tempo sync, **ENV SYNC**, ANALOG's filter as LP / BP / HP,
+  a note's **LEN** and step velocity, **TEXTURE** (a looping bed under the mix), **live drum mutes** (PARA + a
+  black key), step entry from a MIDI keyboard, Program Change, SAVE > PROJECT > ERASE, a bolder screen font and a
+  look-ahead master limiter.
+- SYSTEM's about screen shows `0.2 / SLOOP 2.6`.
+
+**After updating from 0.1.x, check two settings once:** HOME menu > SYSTEM > **BOOT LOGO**, and GLO > MIDI 2 >
+**IN** (the MIDI channel SLOOP listens on). SLOOP 2.6 stores the MIDI IN channel in the bits where 0.1.x kept the
+boot logo, so a 0.1.x BOOT LOGO of SLOOP or NONE comes back as SNOOP37 with IN = CH 1 or CH 2. Set both once and
+they stay. Projects, presets, samples and kits are kept; a project saved in 0.2 does not open in 0.1.x.
 
 ## Features on the SMK-37
 
 ![Snoop37 screens: the tracks, the visualiser, the Snoop visualiser, the system menu](docs/img/screens.png)
 
-Everything of SLOOP 2.5 (four tracks, the synthesis engines and sounds, drum kits, samples, song mode, parameter
+Everything of SLOOP 2.6 (four tracks, the synthesis engines and sounds, drum kits, samples, song mode, parameter
 locks, USB audio, MIDI clock, the menus and screens), mapped onto the SMK-37's controls:
 
 - **37 velocity keys.** The middle 27 keys (F3–G5) are the FM-1's note keys (notes, steps, menus), now with
@@ -62,7 +87,7 @@ Not used yet: the pedal jack, TRS MIDI OUT, pad pressure.
 
 | Branch | What |
 | --- | --- |
-| `main` | Snoop37: SLOOP 2.5 + the SMK-37 port + the Snoop37 intro, jingle and look |
+| `main` | Snoop37: SLOOP 2.6 + the SMK-37 port + the Snoop37 intro, jingle and look |
 | `smk37-board` | SLOOP 2.5 + the SMK-37 board support only (no Snoop37 additions): the base for porting other FM-1 firmwares (Felucca, X0X, FoMni, Melodee, ...) to the SMK-37. See [fm1-to-smk37](https://github.com/genkigenki/fm1-to-smk37) for the hardware facts and the porting guide |
 
 ## Build
@@ -84,13 +109,13 @@ BOARD=smk37 SNOOP37=1 sh build.sh
 # the plain SMK-37 port, without the intro and jingle
 BOARD=smk37 sh build.sh
 
-# without BOARD: SLOOP for the FM-1 (build/felucca.fwsc), byte-identical to upstream SLOOP 2.5
+# without BOARD: SLOOP for the FM-1 (build/felucca.fwsc), byte-identical to upstream SLOOP 2.6
 sh build.sh
 ```
 
 `JIELI_TOOLCHAIN` and `AC79_SDK` override the default locations. The host tests run after an FM-1 build:
 `sh build.sh && sh tests/run_tests.sh` (they include the SMK-37 flash-map, package, loader and installer
-tests). One check, the static cost budget of `fm1_alnk0_irq`, fails the same way on unmodified SLOOP 2.5
+tests). One check, the static cost budget of `fm1_alnk0_irq`, fails the same way on unmodified SLOOP 2.6
 (a stale budget file upstream).
 
 ## Install
@@ -140,7 +165,7 @@ Snoop37 is free software under the **GNU General Public License v3.0** ([LICENSE
 third-party parts keep their own licenses (see [LICENSING.md](LICENSING.md) and [LICENSES/](LICENSES)).
 
 - **SLOOP** – isod89, <https://github.com/isod89/sloop-fm1> (the groovebox, its engines, sounds, UI, installer and
-  tools; this repository is a fork of SLOOP 2.5).
+  tools; this repository is a fork of SLOOP 2.6).
 - **Felucca** – Leo Kuroshita (@kurogedelic), Hügelton Instruments, <https://github.com/hugelton/Felucca> (the
   original open FM-1 firmware SLOOP is built on).
 - **SMK-37 port and Snoop37** – genkigenki.

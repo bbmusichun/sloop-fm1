@@ -6,6 +6,7 @@
 #define BRAND_NAME "SNOOP37"
 #define BRAND_SAIL_X 140
 #define BRAND_BASED "BASED ON SLOOP BY ISOD89"
+#define BRAND_VERSION "0.2"      /* Snoop37's version, before SLOOP's on SYSTEM's about screen */
 #define BRAND_URL "GITHUB.COM/GENKIGENKI/SNOOP37"
 #define BRAND_CRASH "SNOOP37 CRASH"
 #define BRAND_RESCUE "SNOOP37 USB RESCUE"
