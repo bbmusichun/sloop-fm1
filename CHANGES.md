@@ -11,6 +11,8 @@ From here on Snoop37's version number follows the SLOOP release it is based on (
   the bold screen font, the look-ahead limiter. SLOOP's list: [README-SLOOP.md](README-SLOOP.md#whats-new-in-26).
 - The SMK-37 pitch wheel keeps its own ±7 semitones; MIDI pitch bend from outside uses GLO > MIDI 2 > BEND.
 - SYSTEM's about screen shows `2.6 (SLOOP 2.6)`.
+- FADER BANK: pressed again, `<` `>` or K2 change the bank; the screen closes after 4 s. KNOB BANK and FADER BANK
+  close each other, so only one bank screen is up (before, `<` `>` went to the hidden pad picker).
 - HOME menu > SYSTEM gains MIDI LEARN CLEAR next to BOOT LOGO.
 - The installers (web and `tools/fm1_install.py`) keep the SMK-37 model rules and port names and take SLOOP 2.6's
   additions (CLIPPER / SLOOP port names, "not found" lists the MIDI ports there are).

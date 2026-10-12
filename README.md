@@ -63,7 +63,8 @@ locks, USB audio, MIDI clock, the menus and screens), mapped onto the SMK-37's c
   pad picks one and plays a short preview, `<` `>` page. KNOB BANK pins the picker open.
 - **4 faders with banks.** FADER BANK cycles A level, B filter (low-pass – open – high-pass), C reverb, D delay for
   the four tracks (track 4 = drums); a fader takes over once it is moved. FADER BANK opens a screen with the four
-  banks and what each fader sets; K2 turns the bank, PATCH closes it.
+  banks and what each fader sets; pressed again, `<` `>` or K2 change the bank. It closes after 4 s or with PATCH.
+  Only one bank screen is up at a time: KNOB BANK (pad picker) and FADER BANK close each other.
 - **Wheels.** Pitch wheel: pitch bend ±7 semitones on the selected synth track. Mod wheel: vibrato (10 Hz, up to
   ±1 semitone). Both calibrate themselves.
 - **8 knobs as the FM-1's top row:** K1 master volume, K2 SELECT (tempo, pages), K3 track, K4 sound / kit,
