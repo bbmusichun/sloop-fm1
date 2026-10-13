@@ -1,5 +1,9 @@
 # Snoop37
 
+> Snoop37 is [SLOOP](https://github.com/isod89/sloop-fm1) by **isod89** for the SMK-37, with extras for its
+> hardware. SLOOP's maintainers suggested this fork as its home
+> ([isod89/sloop-fm1#112](https://github.com/isod89/sloop-fm1/pull/112)). All credit for SLOOP to isod89.
+
 <img src="docs/img/intro.webp" width="360" alt="The Snoop37 intro on the SMK-37 display">
 
 **Alternative firmware for the M-Vave SMK-37 (SMK-37 Pro, Elite or MKE-P37), based on FM-1 firmwares.**
@@ -169,7 +173,7 @@ third-party parts keep their own licenses (see [LICENSING.md](LICENSING.md) and 
   tools; this repository is a fork of SLOOP 2.6).
 - **Felucca** – Leo Kuroshita (@kurogedelic), Hügelton Instruments, <https://github.com/hugelton/Felucca> (the
   original open FM-1 firmware SLOOP is built on).
-- **SMK-37 port and Snoop37** – genkigenki.
+- **SMK-37 board support and the Snoop37 additions** – genkigenki.
 - The CC0 instrument samples are by Versilian Studios (see `assets/samples-cc0/ATTRIBUTION.txt`).
 
 M-Vave, SMK-37 Pro and FM-1 are names of their respective owners. This project is not affiliated with or endorsed by
