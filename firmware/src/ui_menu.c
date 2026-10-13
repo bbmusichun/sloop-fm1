@@ -6,11 +6,21 @@
  * its row), PRESETS moves the cursor; OCT+ steps the cursor's setting round or opens it (CALIBRATION, ABOUT),
  * OCT- closes (from ABOUT: back to the section). */
 /* ------------------------------------------------------------ menu --- */
+#if SNOOP37
+enum { MI_COLOR, MI_ZOOM, MI_LIGHTS, MI_KEYS, MI_NOTES, MI_LOWCUT, MI_USB, MI_SERIAL, MI_BOOT, MI_PANEL, MI_LCLEAR,
+       MI_ABOUT, MI_COUNT };
+static const char *const MI_NAME[MI_COUNT] = {"COLOR", "ZOOM", "LIGHTS", "KEYS", "NOTES", "SPEAKER LOWCUT", "USB AUDIO",
+                                              "USB SERIAL", "BOOT LOGO", "HARDWARE CALIBRATION", "MIDI LEARN CLEAR",
+                                              "ABOUT"};
+static const char *const BOOT_NAME[BOOT_N] = {"SNOOP37", "SLOOP", "NONE"};
+#define MI_SYS0 MI_BOOT
+#else
 enum { MI_COLOR, MI_ZOOM, MI_LIGHTS, MI_KEYS, MI_NOTES, MI_LOWCUT, MI_USB, MI_SERIAL, MI_PANEL, MI_LCLEAR, MI_ABOUT,
        MI_COUNT };
 static const char *const MI_NAME[MI_COUNT] = {"COLOR", "ZOOM", "LIGHTS", "KEYS", "NOTES", "SPEAKER LOWCUT", "USB AUDIO",
                                               "USB SERIAL", "HARDWARE CALIBRATION", "MIDI LEARN CLEAR", "ABOUT"};
 #define MI_SYS0 MI_PANEL
+#endif
 enum { MS_SCREEN, MS_LIGHTS, MS_AUDIO, MS_SYSTEM, MS_COUNT };
 static const char *const MS_NAME[MS_COUNT] = {"SCREEN", "LIGHTS", "AUDIO", "SYSTEM"};   /* (AUDIO: and USB) */
 static const uint8_t MS_FIRST[MS_COUNT + 1] = {MI_COLOR, MI_LIGHTS, MI_LOWCUT, MI_SYS0, MI_COUNT};   /* rows of each */
@@ -43,6 +53,9 @@ static const char *mi_value(uint32_t i, uint16_t *c)
     case MI_LOWCUT: return settings.lowcut ? "ON" : "OFF";
     case MI_USB: return usb_full ? "FULL" : "MASTER";
     case MI_SERIAL: return usb_serial ? "ON" : "OFF";
+#if SNOOP37
+    case MI_BOOT: return BOOT_NAME[boot_logo % BOOT_N];
+#endif
     case MI_LCLEAR: {                                 /* (2.6) the CCs MIDI LEARN holds; OCT+ clears them */
         static char b[8];
         uint32_t n = ml_count();
@@ -66,6 +79,9 @@ static void draw_menu(void)
     uint32_t sig = ui.menu * 7u + ui.menu_sel * 131u + settings.palette * 1009u + settings.lowcut * 7919u +
                    settings.zoom * 104729u + lights_lvl * 1299709u + lights_keys * 15485863u + ml_count() * 2654435u +
                    lights_notes * 32452843u + usb_full * 49979687u + usb_serial * 86028121u;
+#if SNOOP37
+    sig += boot_logo * 122949829u;
+#endif
     if (!ui.force && sig == ui.menu_sig)
         return;
     ui.menu_sig = sig;
@@ -92,17 +108,17 @@ static void draw_menu(void)
             cv_rect(BRAND_SAIL_X, 10, 8, 4, TE_COL[0]), cv_rect(BRAND_SAIL_X, 16, 12, 4, TE_COL[1]);   /* the sail */
             cv_rect(BRAND_SAIL_X, 22, 16, 4, TE_COL[2]), cv_rect(BRAND_SAIL_X, 28, 20, 4, TE_COL[3]);
             cv_text(4, 36, &FONT_S, BRAND_BASED, C_AMB);
+#ifdef BRAND_VERSION
+            cv_text(4, 54, &FONT_S, BRAND_VERSION " (" FELUCCA_VERSION ")", C_HI);   /* "2.6 (SLOOP 2.6)" */
+#else
             cv_text(4, 54, &FONT_S, FELUCCA_VERSION, C_HI);
+#endif
             cv_text(236 - text_w(&FONT_S, __DATE__), 54, &FONT_S, __DATE__, C_GRAY);   /* build date */
             cv_text(cv_text(4, 72, &FONT_S, "LEO KUROSHITA", C_HI) + 8, 72, &FONT_S, "@KUROGEDELIC", C_AMB);
             cv_text(4, 88, &FONT_S, "H\xDCGELTON INSTRUMENTS", C_HI);   /* Latin-1 U-umlaut */
             cv_text(4, 104, &FONT_S, "HUGELTON.COM", C_AMB);
             cv_text(4, 119, &FONT_S, "GPL-3.0, NO WARRANTY", C_HI);
-#ifdef BRAND_URL
-            cv_text(4, 132, &FONT_S, BRAND_URL, C_AMB);
-#else
             cv_text(4, 132, &FONT_S, "GITHUB.COM/ISOD89/SLOOP-FM1", C_AMB);   /* (the source of this firmware) */
-#endif
             cv_text(4, 146, &FONT_S, "FONT: TERMINUS (OFL)", C_DIM);
             cv_text(4, 159, &FONT_S, "SAMPLES: VERSILIAN (CC0)", C_DIM);
             cv_text(4, 172, &FONT_S, "+ SONIC PI (CC0)", C_DIM);
@@ -192,6 +208,16 @@ static void mi_set(uint32_t i, int32_t s)
     case MI_NOTES:
         lights_notes = (uint8_t)(s > 0 ? 1u : s < 0 ? 0u : !lights_notes);
         break;
+#if SNOOP37
+    case MI_BOOT:                                      /* SNOOP37 / SLOOP / NONE; OCT+ steps round */
+        if (s > 0 && boot_logo + 1u < BOOT_N)
+            boot_logo++;
+        else if (s < 0 && boot_logo > 0u)
+            boot_logo--;
+        else if (!s)
+            boot_logo = (uint8_t)((boot_logo + 1u) % BOOT_N);
+        break;
+#endif
     case MI_LIGHTS:
     case MI_KEYS: {                                    /* brighter / dimmer (stops at the ends); OCT+ steps round */
         uint8_t *v = i == MI_LIGHTS ? &lights_lvl : &lights_keys;

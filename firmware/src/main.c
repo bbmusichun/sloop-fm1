@@ -211,7 +211,14 @@ static void fm1_main(void)
 #endif
     settings_init();
     lcd_init();
+#if SNOOP37
+    if (boot_logo == BOOT_SLOOP)                        /* (menu BOOT LOGO) */
+        sloop_splash();
+    else
+        snoop_splash_bg();                              /* the SNOOP37 splash (snoop_splash.c) */
+#else
     sloop_splash();                                     /* the SLOOP logo (splash.c) */
+#endif
     if (felucca_dbg.magic != DBG_MAGIC) {
         memset(&felucca_dbg, 0, sizeof felucca_dbg);
         felucca_dbg.magic = DBG_MAGIC;
@@ -252,8 +259,18 @@ static void fm1_main(void)
         panel_setup();                        /* OCT- + OCT+ held at power-on */
         settings_save();
     }
+#if SNOOP37
+    if (boot_logo == BOOT_SNOOP37)
+        snoop_splash();                                 /* animated, ~5 s, fades into the UI; a key ends it */
+    else {
+        if (boot_logo == BOOT_SLOOP)
+            fm1_delay_ms(900);
+        lcd_fill(0, 0, 240, 240, C_BLACK);
+    }
+#else
     fm1_delay_ms(900);                                  /* (the logo stays a moment) */
     lcd_fill(0, 0, 240, 240, C_BLACK);
+#endif
 
     healthy_since = fm1_ms;
     for (;;) {

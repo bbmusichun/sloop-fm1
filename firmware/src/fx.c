@@ -1096,6 +1096,9 @@ static void mix_block(int32_t *out, uint32_t n)
     click_render(mix_l, mix_r, n);                      /* the metronome: its own voice (drums.c), any kit, any mute */
     texture_mix(mix_l, mix_r, n);                       /* GLO > TEXTURE (2.6): the bed, dry */
     punch_freeze_feed(send_r, mix_l, mix_r, n);         /* punch-in FREEZE: the dry mix into the held reverb */
+#if SNOOP37
+    mkj_render(mix_l, mix_r, send_r, n);                /* the SNOOP37 boot jingle (snoop_jingle.c) */
+#endif
     fx_buses(send_c, send_d, send_r, wet_l, wet_r, n);
     for (i = 0; i < n; i++) {
         mix_l[i] += wet_l[i];

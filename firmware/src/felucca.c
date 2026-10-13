@@ -18,6 +18,12 @@
 #endif
 #include "fm1_lcd_hw.h"
 #include "felucca_tables.h"
+#ifndef SNOOP37
+#define SNOOP37 0                /* 1: the Snoop37 look: its boot splash, update screens, name and visualisers (snoop_*) */
+#endif
+#if SNOOP37
+#include "snoop_theme.h"         /* the SNOOP37 name on the screens */
+#else
 #define BRAND_NAME "SLOOP"
 #define BRAND_SAIL_X 96
 #define BRAND_BASED "BASED ON FELUCCA"
@@ -26,6 +32,7 @@
 #define VIS_STYLES 12u
 #define VIS_LAST_NAMES "SLOOP"
 #define VIS_N_STR "/12"
+#endif
 
 #include "libc.c"
 #include "lcd.c"
@@ -36,6 +43,9 @@
 #include "params.c"
 #include "voice.c"
 #include "slicer.c"          /* per-track SLICER insert, used by fx.c */
+#if SNOOP37
+#include "snoop_jingle.c"    /* the boot jingle's synth (mixed in by fx.c mix_block) */
+#endif
 #include "fx.c"
 #ifndef FELUCCA_OTA
 #define FELUCCA_OTA 1            /* M-UPGRADE update entry; needs FELUCCA_FLASH */
@@ -185,6 +195,9 @@ static int ota_prog(uint32_t off, const void *p, uint32_t n)
     return fl_write(off, p, n);
 }
 static int ota_fread(uint32_t off, void *p, uint32_t n) { return st_read(off, p, n); }
+#if SNOOP37
+static void snoop_ota(uint32_t step, int32_t code);
+#endif
 static void ota_show(uint32_t step, int32_t code)
 {
 #if BOARD_SMK37   /* step 5 stays on screen while the loader writes the flash: say so */
@@ -194,6 +207,10 @@ static void ota_show(uint32_t step, int32_t code)
 #endif
     char b[24];
     if (recovery_active) return;             /* keep polled USB alive during OTA */
+#if SNOOP37
+    snoop_ota(step, code);                   /* (snoop_splash.c) */
+    return;
+#endif
     lcd_fill(0, 0, 240, 240, C_BLACK);
     draw_text_box(0, 92, 240, &FONT_S, "UPDATE", C_WHITE, 1);
     if (step < 9u) {
@@ -233,4 +250,8 @@ static void ota_commit(const uint8_t *parm)
 #include "recovery.c"        /* early, polled USB updater; no synth or settings */
 #endif
 #include "splash.c"          /* SLOOP boot logo (build/gen/sloop_logo.h) */
+#if SNOOP37
+#include "snoop_splash.c"    /* animated SNOOP37 boot splash instead of the logo */
+#include "snoop_vis.c"       /* its visualiser styles (ui_vis.c) */
+#endif
 #include "main.c"
