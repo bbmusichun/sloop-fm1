@@ -16,6 +16,13 @@ From here on Snoop37's version number follows the SLOOP release it is based on (
 - HOME menu > SYSTEM gains MIDI LEARN CLEAR next to BOOT LOGO.
 - The installers (web and `tools/fm1_install.py`) keep the SMK-37 model rules and port names and take SLOOP 2.6's
   additions (CLIPPER / SLOOP port names, "not found" lists the MIDI ports there are).
+- The intro ends on the SNOOP37 title alone (no port credit line under it).
+- Snoop37 is now SLOOP's SMK-37 support (the pull request to SLOOP: every SMK-37 feature, also in a plain SLOOP
+  build) plus the Snoop37 look behind the build flag `SNOOP37=1` (intro, jingle, update screens, name,
+  visualisers, BOOT LOGO). The source is based on SLOOP's current main (firmware 2.6; the editor's audio preview
+  and the offline app came with it).
+- Installers: the official packages of the whole SMK-37 range are accepted for the way back (by their structure, so
+  M-Vave's next release too); more port names probed (MAKU, RAINBOW).
 - Kept from 0.1.x: the pitch wheel fix, the Elite / MKE-P37 builds (`MODEL=elite|mke`), the installer's model check
   on resume.
 

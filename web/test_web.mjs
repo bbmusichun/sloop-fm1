@@ -16,8 +16,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import vm from "node:vm";
-import { blockCount, logicalImage, productOf, validateStockPackage } from "./fm1pkg.js";
-import { Updater, pack7, unpack7, sameKeyboard, OUR_LOADER, OTHER_SMK, PORT_RE } from "./fm1ota.js";
+import { blockCount, logicalImage, productOf, validateStockPackage, identifyStockPackage, STOCK_SMK } from "./fm1pkg.js";
+import { Updater, pack7, unpack7, sameKeyboard, OUR_LOADER, OTHER_SMK, PORT_RE, stockFit } from "./fm1ota.js";
 
 let failed = 0;
 const ok = (cond, what) => { console.log(`${what.padEnd(64)} ${cond ? "ok" : "FAIL"}`); if (!cond) failed++; };
@@ -34,7 +34,7 @@ const E = vm.runInNewContext(proto + `
    CHOP, chopNovelty, chopHits, chopSnap, chopGrid, chopEqual, chopList, chopPick, chopFit, chopZones, wavFile, zipStore, crc32,
    UP, bank, capturePatch, auditionPatch, startWatch, libraryFile, readLibraryFile, paramKeys, patternFromSteps, stepsFromPattern, upName,
    mixer, GM_DRUM, drumName, parseNotes, fmtValue, F, DRUM_LANES, LV_NAMES, emptyDrum, lockable, MICRO, FC, fillGet, fillSet, pack7, unpack7,
-   backupCapture, backupRestore, backupObjects, b64enc, b64dec, FM6, KIT, kitPad, kitZones, kitLen, kitBytes, kitFit, kitSplit, kitLaneOf, kitPlace, zipRead, ROLL, SMF, ARR, mockSettings, fm6CartWrite, fm6CartPreset, fm6CartSlots, fm6CartPresets, DSYN, DSYN_MOCK_NAMES, DSYN_MOCK_KITS, SetGate, bkProjFormat, bkDevFormat, bkFwAtLeast })`,
+   loudDb, matchGains, withGain, LEVEL_MIN, backupCapture, backupRestore, backupObjects, b64enc, b64dec, FM6, KIT, kitPad, kitZones, kitLen, kitBytes, kitFit, kitSplit, kitLaneOf, kitPlace, zipRead, ROLL, SMF, ARR, mockSettings, fm6CartWrite, fm6CartPreset, fm6CartSlots, fm6CartPresets, DSYN, DSYN_MOCK_NAMES, DSYN_MOCK_KITS, SetGate, bkProjFormat, bkDevFormat, bkFwAtLeast })`,
 { setTimeout, clearTimeout, setInterval, clearInterval, console, TextEncoder, TextDecoder, Blob, Response, DecompressionStream });
 
 async function editorMock() {
@@ -845,6 +845,31 @@ await (async () => {
     ok(!E.kitSplit(one, R) && E.kitFit(one, R, 2) && E.kitSplit(one, R) && E.kitSplit(one, R)[1].length === 0,
       "drum kit: ... a sound longer than a slot is cut to one slot");
   }
+  {   /* SLOOP 2.6: levels heard (loudDb: K-weighted, the loudest 100 ms) and MATCH LEVELS (matchGains) */
+    const R = E.SMP.RATE, sine = (f, n, a) => Int16Array.from({ length: n }, (_, i) => Math.round(a * Math.sin(2 * Math.PI * f * i / R)));
+    const d6 = E.loudDb(sine(1000, R, 16000)) - E.loudDb(sine(1000, R, 8000));
+    ok(Math.abs(d6 - 6.02) < 0.05, `levels: half the amplitude is 6 dB quieter (${d6.toFixed(2)} dB)`);
+    const lowHigh = E.loudDb(sine(3000, R, 16000)) - E.loudDb(sine(40, R, 16000));
+    ok(lowHigh > 3, `levels: as the ear hears it, a 40 Hz tone counts less than 3 kHz at the same peak (${lowHigh.toFixed(1)} dB)`);
+    const click = E.loudDb(sine(1000, Math.round(R * 0.01), 16000)) - E.loudDb(sine(1000, R, 16000));
+    ok(click < -8 && click > -12, `levels: a 10 ms click counts over 100 ms, as heard (${click.toFixed(1)} dB)`);
+    let seed = 7;
+    const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff) * 2 - 1;
+    const kick = Int16Array.from({ length: Math.round(R * 0.4) }, (_, i) => Math.round(30000 * Math.exp(-i / (R * 0.08)) * Math.sin(2 * Math.PI * 55 * i / R)));
+    const hat = Int16Array.from({ length: Math.round(R * 0.06) }, (_, i) => Math.round(30000 * Math.exp(-i / (R * 0.012)) * rnd()));
+    const snare = Int16Array.from({ length: Math.round(R * 0.25) }, (_, i) => Math.round(30000 * Math.exp(-i / (R * 0.05)) * (0.5 * rnd() + 0.5 * Math.sin(2 * Math.PI * 190 * i / R))));
+    const g = E.matchGains([kick, null, snare, hat]);
+    const after = [kick, snare, hat].map((x, j) => E.loudDb(E.withGain(x, [g[0], g[2], g[3]][j])));
+    const spread = Math.max(...after) - Math.min(...after);
+    ok(g[1] === null && [g[0], g[2], g[3]].every((v) => v <= 0 && v >= E.LEVEL_MIN) && Math.max(g[0], g[2], g[3]) === 0 && spread < 1.2,
+      `levels: MATCH LEVELS: kick ${g[0]}, snare ${g[2]}, hat ${g[3]} dB: heard within ${spread.toFixed(2)} dB, the quietest untouched`);
+    const far = E.matchGains([sine(1000, R, 30000), sine(1000, R, 100)]);
+    ok(far[0] === E.LEVEL_MIN && far[1] === 0, "levels: never more than 24 dB down (a near-silent sound does not mute the rest)");
+    const half = E.withGain(Int16Array.of(20000, -20000), -6);
+    ok(Math.abs(half[0] - 10024) < 3 && Math.abs(half[1] + 10024) < 3 && E.withGain(half, 0) === half, "levels: a file's Gain (-6 dB: half), 0 dB as it came");
+    const kp = { s: kick, fname: "k.wav", tune: 0, gain: g[0], len: 0 };
+    ok(Math.abs(E.loudDb(E.kitPad(kp)) - after[0]) < 0.1, "levels: the drum kit pad sends what was matched (kitPad, its Gain)");
+  }
   const files = [{ name: "KIT/01 KICK.wav", data: new Uint8Array([1, 2, 3]) }, { name: "KIT/03 SNARE.wav", data: new Uint8Array(1000).fill(7) }];
   const back = await E.zipRead(E.zipStore(files));
   ok(back.length === 2 && back[0].name === "KIT/01 KICK.wav" && back[1].data.length === 1000 && back[1].data[999] === 7, "drum kit: a kit ZIP reads back (zipRead)");
@@ -1536,6 +1561,100 @@ async function updater() {
   ok(e6 && /official FM-1 V15/.test(e6.message), "fm1pkg.js: only the exact official V15 is accepted (SHA-256)");
 }
 
+/* ------------------------------ the return to the M-Vave firmware (official SMK-37 range packages) --- */
+/* the official packages are read from SMK_STOCK_DIR (outside the repo, never copied anywhere; M-Vave's file names,
+ * SMK-37_Pro_016.fwsc ...); skipped without them */
+async function stockReturn() {
+  const REF = process.env.SMK_STOCK_DIR || join(HERE, "no-stock-packages");
+  const FILES = { "SMK-37 Pro": "SMK-37_Pro_", "SMK-37 Elite": "SMK-37_Elite_", "MKE-P37": "MKE-P37_",
+                  "Starrykey 37 Play": "STARRYKEY-37_PLAY_" };
+  const BLOCKS36 = new Set(["SMK-37 Pro_016", "MKE-P37_016", "STARRYKEY-37 PLAY_016"]);   // the rest: 20 interleave blocks
+  const strip = (raw, n) => {       // the logical image, independently: drop the marker byte of the first n blocks
+    const out = [];
+    for (let i = 0; i < n; i++) out.push(...raw.subarray(i * 48, i * 48 + 47));
+    return Uint8Array.from([...out, ...raw.subarray(n * 48)]);
+  };
+  const have = STOCK_SMK.filter((k) => existsSync(`${REF}/${FILES[k.name]}${k.version}.fwsc`));
+  /* the page and the stock fit rule need no files */
+  ok(stockFit("SMK-37 Pro", "SMK-37 Pro_016") === "same" && stockFit("ota-SMK-37 Elite", "SMK-37 Elite_015") === "same"
+    && stockFit("SMK-37 Elite", "SMK-37 Pro_016") === "other" && stockFit("SMK-37", "MKE-P37_016") === "unknown"
+    && stockFit("SMK-37+VA", "SMK-37 Pro_016") === "unknown" && stockFit("STARRYKEY-37 PLAY", "STARRYKEY-37 PLAY_016") === "same"
+    && stockFit("FM-1", "SMK-37 Pro_016") === "refuse" && stockFit("SMK-37 Pro", "FM-1_015") === "refuse",
+    "stock: fit rule (own model / other SMK model warns / unnamed warns / FM-1 refused)");
+  ok(sameKeyboard("SMK-37", "SMK-37 Pro") && !sameKeyboard("SMK-37", "FM-1"), "stock: 'SMK-37_9xx' (other firmwares) is the SMK keyboard");
+  if (have.length < STOCK_SMK.length) { console.log(`stock: ${STOCK_SMK.length - have.length} official packages absent in SMK_STOCK_DIR: those skipped`); }
+  if (!have.length) return;
+  const raws = {};
+  for (const k of have) {
+    const raw = new Uint8Array(readFileSync(`${REF}/${FILES[k.name]}${k.version}.fwsc`));
+    raws[k.product] = raw;
+    const st = await identifyStockPackage(raw).catch((e) => e);
+    const n = BLOCKS36.has(k.product) ? 36 : 20;
+    ok(st.product === k.product && st.model === k.product.split("_")[0] && st.known === true && blockCount(raw) === n && eq(st.image, strip(raw, n)),
+      `stock: ${k.product} accepted, known release, ${n} blocks, logical image`);
+  }
+  if (raws["STARRYKEY-37 PLAY_016"]) ok(productOf(raws["STARRYKEY-37 PLAY_016"]) === "STARRYKEY-37 PLAY_016",
+    "stock: the Starrykey V016's 21-character identity (21 identity blocks + 15 more)");
+  /* accepted by structure, not by hash: another identity written into the marker bytes (the image unchanged) */
+  const relabel = (raw, ident) => {
+    const out = Uint8Array.from(raw);
+    for (let i = 0; i < 20; i++) out[i * 48 + 47] = i < ident.length ? (ident.charCodeAt(i) + i + 1) & 0xFF : 0x7D;
+    return out;
+  };
+  const any = raws[have[0].product];
+  const next = await identifyStockPackage(relabel(any, "SMK-37 Pro_017")).catch((e) => e);
+  ok(next.product === "SMK-37 Pro_017" && next.version === "017" && next.name === "SMK-37 Pro" && next.known === false,
+    "stock: a valid package with an unknown hash (M-Vave's next release, V017): accepted, not 'known'");
+  const ours = await identifyStockPackage(relabel(any, "SMK-37 Pro_901")).catch((e) => e);
+  const ours2 = await identifyStockPackage(relabel(any, "MKE-P37_700")).catch((e) => e);
+  const ours3 = await identifyStockPackage(relabel(any, "SMK-37_904")).catch((e) => e);
+  ok(ours.code === "ours" && ours2.code === "ours" && ours3.code === "ours", "stock: our own packages (_9xx / _7xx, 'SMK-37_9xx'): refused here");
+  const fm1pkg = await identifyStockPackage(relabel(any, "FM-1_016")).catch((e) => e);
+  ok(fm1pkg.code === "fm1", "stock: an FM-1 package: refused ('fm1')");
+  const big = await identifyStockPackage(relabel(any, "SMK-37 Pro_150")).catch((e) => e);
+  const other = await identifyStockPackage(relabel(any, "KEYSTEP_016")).catch((e) => e);
+  ok(big.code === "unknown" && other.code === "unknown", "stock: a version past 099 or a model outside the SMK-37 range: refused");
+  const bent = Uint8Array.from(any); bent[bent.length >> 1] ^= 1;        // inside the app (flash.bin)
+  const e1 = await identifyStockPackage(bent).catch((e) => e);
+  ok(e1 && e1.code === "damaged", "stock: one byte of the firmware changed (CRC): refused ('damaged')");
+  const old = `${REF}/MKE-P37_013.fwsc`;
+  if (existsSync(old)) {
+    const e2 = await identifyStockPackage(new Uint8Array(readFileSync(old))).catch((e) => e);
+    ok(e2.product === "MKE-P37_013" && e2.known === false, "stock: an official package not in the list (MKE-P37 013): accepted, not 'known'");
+  }
+  const e3 = await identifyStockPackage(new Uint8Array(1000)).catch((e) => e);
+  ok(e3 && e3.code === "unknown", "stock: any other file: refused");
+
+  /* the install on a fake keyboard: our port runs, its update starts the loader, the loader writes the whole package */
+  const k = have.find((x) => x.product === "SMK-37 Pro_016") || have[0];
+  const pkg = await identifyStockPackage(raws[k.product]);
+  const want = strip(raws[k.product], BLOCKS36.has(k.product) ? 36 : 20);
+  const kb = new FakeFM1(want, { identity: "SMK-37 Pro_900", name: "Felucca", loader: "ota-SMK-37 Pro_900", finalIdentity: k.product, readAll: true });
+  const steps = [];
+  const got = await new Updater(kb.access).install(pkg.image, pkg.product, (s) => steps.push(s), true).catch((e) => e);
+  ok(got === k.product && kb.bad === 0 && kb.wrote === want.length && eq(kb.written, want) && steps.at(-1) === "done",
+    `stock: ${k.product} written from 'SMK-37 Pro_900': the whole logical image (${kb.wrote} B), identity checked`);
+  const chance = new FakeFM1(want, { identity: "SMK-37_931", name: "Felucca", loader: "ota-SMK-37_931", jump: true });
+  const e10 = await new Updater(chance.access).install(pkg.image, pkg.product, null, true).catch((e) => e);
+  ok(e10 && e10.code === "other" && chance.served === 0, "stock: a firmware with its own updater ('SMK-37_931'): nothing sent ('other')");
+  const kb2 = new FakeFM1(pkg.image, { identity: "SMK-37 Elite_901", name: "Felucca", loader: "ota-SMK-37 Elite_901", finalIdentity: "SMK-37 Elite_901" });
+  const e4 = await new Updater(kb2.access).install(pkg.image, pkg.product, null, true).catch((e) => e);
+  ok(e4 && e4.code === "mismatch" && e4.detail === "SMK-37 Elite_901", "stock: the keyboard not reporting the official identity afterwards: 'mismatch'");
+  const fm1 = new FakeFM1(pkg.image, { identity: "FM-1_900", name: "Felucca" });
+  const e5 = await new Updater(fm1.access).install(pkg.image, pkg.product, null, true).catch((e) => e);
+  ok(e5 && e5.code === "model" && fm1.served === 0, "stock: an SMK-37 package on an FM-1: refused, nothing read");
+  /* already in update mode: the official package resumed on any SMK loader (ours or M-Vave's), never on an FM-1's */
+  const ota = new FakeFM1(pkg.image, { finalIdentity: k.product });
+  ota.boot("ota-SMK-37 Pro_016", "SMK-37 Pro");
+  const st = [];
+  const r1 = await new Updater(ota.access).resume(pkg.image, (s) => st.push(s), { product: pkg.product, anyModel: true }).catch((e) => e);
+  ok(r1 === true && ota.bad === 0 && st.at(-1) === "done", "stock: keyboard already in update mode: the official package finishes it, identity checked");
+  const otaFm1 = new FakeFM1(pkg.image);
+  otaFm1.boot("ota-FM-1_900", "Felucca Update");
+  const e6 = await new Updater(otaFm1.access).resume(pkg.image, null, { product: pkg.product, anyModel: true }).catch((e) => e);
+  ok(e6 && e6.code === "model" && otaFm1.served === 0, "stock: an FM-1 in update mode is never given an SMK-37 package");
+}
+
 /* a package identity longer than 20 characters (the stock Starrykey 37 Play V016: 21 identity blocks, then 0x7D) */
 function longIdentity() {
   const synth = (product, blocks) => {
@@ -1566,7 +1685,8 @@ async function portNames() {
 
 await packages();
 await updater();
+await stockReturn();
 longIdentity();
-portNames();
+await portNames();
 console.log(failed ? `WEB TESTS FAILED (${failed})` : "web tests passed");
 process.exit(failed ? 1 : 0);

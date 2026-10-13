@@ -975,7 +975,7 @@ static void ui_timers(void)
         ui.hot_t--;
 }
 
-#if BOARD_SMK37 && SNOOP37
+#if BOARD_SMK37
 static int fb_shown(void);                      /* ui_fbank.c */
 static void fb_draw(void);
 static int fb_left(void);
@@ -1012,7 +1012,7 @@ static void ui_draw(void)
         if (!ui.msg_t)
             ui_message("ERASED");
     }
-#if BOARD_SMK37 && SNOOP37
+#if BOARD_SMK37
     if (fb_shown() || pick_shown()) {                  /* the FADER BANK screen (ui_fbank.c), the pad picker (ui_pick.c) */
         if (fb_shown())
             fb_draw();

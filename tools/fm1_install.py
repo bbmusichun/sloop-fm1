@@ -37,9 +37,9 @@ MAXDATA = 512
 BLOCKS, BLK, KEEP = 20, 0x30, 0x2F         # BLOCKS: the identity blocks (more may follow, see block_count)
 MAX_BLOCKS = 64
 LOADER_MARK = b"FELUCCA-LOADER-1"
-PORT_RE = re.compile(r"fm-1|smk|elite|mke-p37|starry|felucca|sloop|clipper|melodee|fomni|x0x|makkuro|snoop|vector|vox|ota|composite|sinco|usb-midi", re.I)   # never probe other gear
-# (the FM-1 and the SMK-37 family under SLOOP / Felucca / Snoop37, under CLIPPER, the update loaders, the stock
-# firmware: as web/fm1ota.js FM1_PORT)
+PORT_RE = re.compile(r"fm-1|smk|elite|mke-p37|starry|felucca|sloop|clipper|melodee|fomni|x0x|makkuro|maku|rainbow|snoop|vector|vox|ota|composite|sinco|usb-midi", re.I)   # never probe other gear
+# (the FM-1 and the SMK-37 family under SLOOP / Felucca, under CLIPPER, the other SMK-37 ports, the update loaders,
+# the stock firmware: as web/fm1ota.js PORT_RE)
 OWN_LOADER_RE = re.compile(r"ota-(FM-1|SMK-37 Pro|SMK-37 Elite|MKE-P37)_9\d\d", re.I)   # SLOOP's own update loader
 
 # seconds; the tests shorten them

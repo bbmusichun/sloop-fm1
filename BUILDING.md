@@ -61,12 +61,17 @@ Build options (environment, `0` or `1`; defaults in `firmware/src/felucca.c`):
 | `FELUCCA_CDC` | 1 | USB serial console |
 | `FELUCCA_UAC` | 1 | USB audio input: the master output, 44.1 kHz stereo (after Felucca 1.0) |
 | `FELUCCA_UART` | 1 (SMK-37: 0) | TRS MIDI IN (the 3.5 mm jack); must stay 0 on the SMK-37 (PH8 is a key row there) |
+| `SNOOP37` | 0 | the Snoop37 look (opt-in): its animated boot splash and jingle, update screens, name and two more visualiser styles, a SYSTEM > BOOT LOGO setting (`firmware/src/snoop_*`); the controls are the same. For `BOARD=smk37` (the FM-1 app slot has no room for it). Off, the build is plain SLOOP |
 
-Target board: `BOARD=smk37 ./build.sh` (or `./build.sh --board smk37`) builds for the M-Vave SMK-37:
+Target board: `BOARD=smk37 ./build.sh` (or `./build.sh --board smk37`) builds for the M-Vave SMK-37 Pro:
 `-DBOARD_SMK37=1` for the app and the update loader, identity `SMK-37 Pro_900` (release `SMK-37 Pro_9XY`),
 the SMK flash layout (PRCT 0x9D000, the stock region table with USRTRIM / USRFLASH) and the package
 `build/sloop-smk37.fwsc`. The intermediate files (`build/felucca.bin`, `build/loader/ota.bin`, `build/felucca.dis`)
 are shared: build the FM-1 again before `tests/run_tests.sh`. The default stays the FM-1, byte for byte.
+The SMK-37 Elite and the MKE-P37 are the same keyboard under other model names, and M-Vave's updater only takes
+a unit's own model: `MODEL=elite` or `MODEL=mke` (with `BOARD=smk37`) builds under that name (identity
+`SMK-37 Elite_900` / `MKE-P37_900`, `build/sloop-smk37-elite.fwsc` / `-mke.fwsc`).
+The SMK-37 models, controls and install: [SMK37.md](SMK37.md).
 
 ## Samples
 
@@ -93,6 +98,33 @@ to the idle + drums mix, counted by the kernel on macOS and under callgrind on L
 valgrind is installed (exact, about 45 s more); without either it is timed, a rough check.
 After an intended change of the sound, `GOLDEN_UPDATE=1 sh tests/run_tests.sh` rewrites
 the hashes; `BUDGET_UPDATE=1` does the same for the cost files.
+
+## Browser audio preview
+
+The browser preview uses the firmware's DSP and sequencer with RAM-backed user samples.
+It requires Python 3, a host C compiler, Node.js for tests, and Emscripten (`brew install emscripten` on macOS).
+It does not need the JieLi toolchain, AC79 SDK, Docker, or an FM-1.
+
+```sh
+python3 tools/build_preview.py
+tests/run_preview_tests.sh
+```
+
+The build produces `build/preview/sloop-preview.wasm`. The tests compare all twelve engines sample by sample
+against the same adapter compiled for the host and verify sequencing, live mixer changes, stop, and user samples.
+`web/make_site.py` includes the preview and caches it for the site app when the WASM build is present:
+
+```sh
+# Use a release package downloaded from isod89/sloop-fm1, or your own firmware build.
+python3 web/make_site.py build/releases/sloop-2.6.fwsc 2.6 build/site
+python3 -m http.server 8766 --bind 127.0.0.1 --directory build/site
+```
+
+Open `http://localhost:8766/webapp/editor/?mock=1`, **Connect**, then **Play loop** to hear all four tracks.
+**Show preview** opens the piano/pads, volume and editable sequence; **Hide preview** folds them while
+playback continues. The piano keys and labeled computer keys audition the selected track.
+The audio controls are available only in simulated mode. The physical-device editor continues to use Web MIDI.
+The standalone downloaded HTML editor does not include the WASM asset.
 
 ## Install
 

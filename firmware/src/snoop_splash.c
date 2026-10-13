@@ -300,9 +300,6 @@ static void mk_poly(const int32_t *p, int n, uint32_t c, int32_t a)
 #define MK_END 101
 static const int8_t MK_FONT[] = {
     'A', 20, 0, 28, 0, 10, 10, 0, 20, 10, 20, 28, MK_UP, 0, 18, 20, 18, MK_END,
-#if BOARD_SMK37 || defined(MK_HOST)
-    'B', 20, 0, 0, 0, 28, 20, 28, 20, 14, 0, 14, MK_UP, 0, 0, 16, 0, 16, 14, MK_END,   /* (the port credit) */
-#endif
     'C', 20, 20, 0, 0, 0, 0, 28, 20, 28, MK_END,
     'D', 20, 0, 14, 0, 0, 13, 0, 20, 7, 20, 21, 13, 28, 0, 28, 0, 14, MK_END,
     'E', 19, 19, 0, 0, 0, 0, 28, 19, 28, MK_UP, 0, 14, 13, 14, MK_END,
@@ -487,33 +484,6 @@ static void mk_title(uint32_t t)
         }
     }
 }
-
-#if BOARD_SMK37 || defined(MK_HOST)
-/* ---- the port credit (SMK-37 build, and the host preview): small and dim at the foot of the screen, fading
- * in with a darker band under it once the title has lit */
-#define MK_CY 229                  /* its top row */
-#define MK_C0 (MK_T0 + 900u)       /* its start */
-static void mk_credit(uint32_t t)
-{
-    int32_t p, k, y, x;
-    if (t < MK_C0 || mk_y1 <= MK_CY - 4)
-        return;
-    p = mk_cubic(mk_prog(t, MK_C0, 600u));
-    k = 256 - p / 2;
-    for (y = mk_lo(MK_CY - 4, mk_y0); y < mk_y1; y++)
-        for (x = 0; x < 240; x++) {
-            uint16_t *q = mk_buf + (y - mk_y0) * 240 + x;
-            uint32_t c = *q;
-            *q = (uint16_t)((((c >> 11) * (uint32_t)k >> 8) << 11) | ((((c >> 5) & 63u) * (uint32_t)k >> 8) << 5) |
-                            ((c & 31u) * (uint32_t)k >> 8));
-        }
-    mk_core = 9;
-    mk_glow = 16;
-    mk_hot = 40;
-    mk_text("SMK-37 PORT BY GENKIGENKI", 120, MK_CY, 72, 0x8C96A8, p * 170 / 256);
-    mk_hot = 110;
-}
-#endif
 
 /* ---- one camera for everything: position (1/16 unit), pitch, the focal length; the screen's centre at
  * (120, MK_Y0). World: x right, y up, z away from the camera; the floor is y = 0. */
@@ -1404,9 +1374,6 @@ static void mk_render(uint16_t *buf, int32_t y0, uint32_t t)
         mk_ota_text();
     } else {
         mk_title(t);
-#if BOARD_SMK37 || defined(MK_HOST)
-        mk_credit(t);
-#endif
         mk_crt(t);
     }
     for (i = 0; i < 240u * MK_SH; i++)

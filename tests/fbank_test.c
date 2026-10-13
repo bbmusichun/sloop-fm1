@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
-/* Snoop37 FADER BANK screen (firmware/src/ui_fbank.c) on the UI harness: banks wrap, what each fader sets,
+/* SMK-37 Pro FADER BANK screen (firmware/src/ui_fbank.c) on the UI harness: banks wrap, what each fader sets,
  * closes by itself; renders DIR/fbank-a.ppm, fbank-b.ppm. */
 #define UI_PAGES_HARNESS_ONLY 1
 #include "ui_pages_test.c"

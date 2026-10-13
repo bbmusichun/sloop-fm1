@@ -1734,8 +1734,8 @@ static void ext_keys_block(void)
 }
 #endif
 
-#if BOARD_SMK37 && SNOOP37
-/* Snoop37: the pad picker's preview (ui_pick.c), a short note on the selected synth track */
+#if BOARD_SMK37
+/* SMK-37 Pro: the pad picker's preview (ui_pick.c), a short note on the selected synth track */
 static volatile uint8_t pick_aud_req;            /* note + 1, 0 = none */
 static uint8_t pick_aud_note, pick_aud_trk;      /* sounding: note + 1 */
 static uint32_t pick_aud_t;
@@ -1766,9 +1766,7 @@ static void keyboard_block(void)
         er_mute = 0;                                  /* EDIT let go: its keys erase again (2.6) */
 #if BOARD_SMK37
     ext_keys_block();
-#if SNOOP37
     pick_aud_block();
-#endif
 #endif
     if (!(layer_buttons() & ly_bit[LY_ROLL]))         /* ARP up (and not locked): the rolls end (the keys stay silent) */
         for (r = 0; r < NROLL; r++)

@@ -19,7 +19,7 @@
 #include "fm1_lcd_hw.h"
 #include "felucca_tables.h"
 #ifndef SNOOP37
-#define SNOOP37 0                /* 1: the SNOOP37 boot splash and update screens (snoop_splash.c) */
+#define SNOOP37 0                /* 1: the Snoop37 look: its boot splash, update screens, name and visualisers (snoop_*) */
 #endif
 #if SNOOP37
 #include "snoop_theme.h"         /* the SNOOP37 name on the screens */
@@ -93,19 +93,19 @@
 #include "ui_song.c"
 #include "ui_studio.c"
 #include "icons.c"           /* parameter icons (FELUCCA_ICONS), used by ui_draw.c */
-#if BOARD_SMK37 && SNOOP37
-#include "ui_pick.c"          /* Snoop37: the pad sound picker */
+#if BOARD_SMK37
+#include "ui_pick.c"          /* SMK-37 Pro: the pad sound picker */
 #endif
 #include "ui_draw.c"
 #include "ui_vis.c"           /* the full-screen visualiser (HOME on HOME, 2.4) */
 #include "ui_layers.c"       /* hold a function button: what the keys and knobs do (TE style) */
 #include "ui_menu.c"
-#if BOARD_SMK37 && SNOOP37
-#include "ui_padgrid.c"       /* Snoop37: steps and tiles in reading order */
+#if BOARD_SMK37
+#include "ui_padgrid.c"       /* SMK-37 Pro: steps and tiles in reading order */
 #endif
 #include "ui_input.c"
-#if BOARD_SMK37 && SNOOP37
-#include "ui_fbank.c"         /* Snoop37: the FADER BANK screen */
+#if BOARD_SMK37
+#include "ui_fbank.c"         /* SMK-37 Pro: the FADER BANK screen */
 #endif
 #ifndef FELUCCA_FLASH
 #define FELUCCA_FLASH 1          /* flash driver + storage.c */

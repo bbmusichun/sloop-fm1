@@ -6,6 +6,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SLOOP installer</title>
+<!--PWA--><link rel="manifest" href="../sloop.webmanifest"><meta name="theme-color" content="#000000"><link rel="icon" href="../icon-192.png"><!--/PWA-->
 <style>
   :root { --bg: #000; --fg: #f2f2f2; --dim: #8a8a92; --tile: #16161a; --line: #2a2a30;
           --blue: #287cff; --green: #1ecc70; --yellow: #ffc618; --orange: #ff621a; --red: #ff2c34; }
@@ -41,6 +42,8 @@
   progress::-moz-progress-bar { background: var(--orange); }
   pre { color: var(--dim); font-size: 11px; white-space: pre-wrap; margin-top: 12px; max-height: 160px; overflow: auto; }
   hr { border: 0; border-top: 1px solid var(--line); margin: 28px 0 18px; }
+  [hidden] { display: none !important; }
+  button.ed { font: inherit; color: var(--fg); border: 0; cursor: pointer; }
   .ed { display: inline-block; margin: 8px 0 0; padding: 10px 14px; background: var(--tile); text-decoration: none; }
   details { margin: 22px 0 0; } summary { cursor: pointer; font-weight: 600; }
   button#stock-go { font: 600 14px/1 inherit; font-family: inherit; background: var(--tile); color: var(--fg); border: 1px solid var(--line);
@@ -88,6 +91,7 @@
   <pre id="log"></pre>
   <a class="ed" href="../editor/" data-t="editor"></a>
   <p class="small"><a href="../editor/sloop-editor.html" download="sloop-editor-2.6.html" data-t="edOffline"></a></p>
+  <p><button id="app" class="ed" hidden data-t="appInstall"></button></p>
   <hr>
   <p class="small" data-t="direct"></p>
   <p class="small" data-t="beta"></p>
@@ -114,12 +118,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
 //
-// FM-1 (and M-Vave SMK-37 Pro) .fwsc packages in the browser: the package identity and the image the
+// FM-1 .fwsc packages in the browser: the package identity and the image the
 // device reads during an update.
 
-const BLOCKS = 20, BLK = 0x30, KEEP = 0x2F, MAX_BLOCKS = 64;
+const BLOCKS = 20, BLK = 0x30, KEEP = 0x2F;
 
-// the package identity ("FM-1_904", "SMK-37 Pro_016"): one marker byte after each of the first 20 blocks
+// the package identity ("FM-1_904"): one marker byte after each of the first 20 blocks
 function productOf(fwsc) {
   if (fwsc.length < BLOCKS * BLK) throw new Error("not an FM-1 package (too short)");
   let s = "";
@@ -130,63 +134,12 @@ function productOf(fwsc) {
   return s;
 }
 
-// interleave blocks: 20, then more while the marker is the unused 0x7D (the stock SMK-37 Pro v016 has 36)
-function blockCount(fwsc) {
-  let n = BLOCKS;
-  while (n < MAX_BLOCKS && (n + 1) * BLK <= fwsc.length && fwsc[n * BLK + KEEP] === 0x7D) n++;
-  return n;
-}
-
-function deinterleave(fwsc, blocks) {
-  const out = new Uint8Array(fwsc.length - blocks);
-  for (let i = 0; i < blocks; i++) out.set(fwsc.subarray(i * BLK, i * BLK + KEEP), i * KEEP);
-  out.set(fwsc.subarray(blocks * BLK), blocks * KEEP);
-  return out;
-}
-
-function crc16(d, c = 0) {                 // CRC-16/XMODEM, as the package and the device use
-  for (const b of d) {
-    c ^= b << 8;
-    for (let k = 0; k < 8; k++) c = c & 0x8000 ? ((c << 1) ^ 0x1021) & 0xFFFF : (c << 1) & 0xFFFF;
-  }
-  return c;
-}
-
-function jlDec(b) {                        // JieLi ENC stream cipher (its own inverse)
-  const out = Uint8Array.from(b);
-  let key = 0xFFFF;
-  for (let i = 0; i < out.length; i++) {
-    out[i] ^= key & 0xFF;
-    key = ((key << 1) ^ (key & 0x8000 ? 0x1021 : 0)) & 0xFFFF;
-  }
-  return out;
-}
-
-// the logical image's flash.bin (type 0) and ota.bin (type 100) match their CRCs (as fm1_install.py)
-function filesOk(img) {
-  if (img.length < 0x40) return false;
-  const h = jlDec(img.subarray(0, 0x40)), rd = (a, o, n) => a.slice(o, o + n).reduce((v, x, i) => v + x * 2 ** (8 * i), 0);
-  if (crc16(h.subarray(2, 0x40)) !== rd(h, 0, 2)) return false;
-  const count = rd(h, 8, 2);
-  if (count < 1 || count > 8 || img.length < 0x40 + 0x50 * count) return false;
-  for (let i = 0; i < count; i++) {
-    const e = jlDec(img.subarray(0x40 + i * 0x50, 0x90 + i * 0x50));
-    const typ = rd(e, 0, 2), off = rd(e, 8, 4), size = rd(e, 12, 4);
-    if (off + size > img.length) return false;
-    if ((typ === 0 || typ === 100) && crc16(img.subarray(off, off + size)) !== rd(e, 4, 2)) return false;
-  }
-  return true;
-}
-
-// the image the device addresses during an update: the .fwsc without the marker bytes (20 blocks, or the
-// detected count when the files' CRCs agree: a 20-block package can have 0x7D after block 20 by chance)
+// the image the device addresses during an update: the .fwsc without the 20 marker bytes
 function logicalImage(fwsc) {
-  const n = blockCount(fwsc);
-  if (n !== BLOCKS) {
-    const img = deinterleave(fwsc, n);
-    if (filesOk(img) || !filesOk(deinterleave(fwsc, BLOCKS))) return img;
-  }
-  return deinterleave(fwsc, BLOCKS);
+  const out = new Uint8Array(fwsc.length - BLOCKS);
+  for (let i = 0; i < BLOCKS; i++) out.set(fwsc.subarray(i * BLK, i * BLK + KEEP), i * KEEP);
+  out.set(fwsc.subarray(BLOCKS * BLK), BLOCKS * KEEP);
+  return out;
 }
 
 // The official FM-1 V15 (M-VAVE Downloads -> PC Firmware -> FM-1 V15, FM-1.fwsc), for the return to the
@@ -195,10 +148,6 @@ function logicalImage(fwsc) {
 const STOCK_V15_SHA256 = "db1642b2b6fa5c2cccb11ffd13878068bb28601678d3644049f99dc40e7edb8a";
 const STOCK_V15_SIZE = 699956;
 const STOCK_V15_PRODUCT = "FM-1_015";
-// The official SMK-37 Pro V016 (SMK-37_Pro_016.fwsc, 36 interleave blocks), for the return of an SMK-37 Pro.
-const STOCK_SMK016_SHA256 = "2d98ce72530e71d617384963423820536f094501299e2cfec0a8d3c3fb6bcfb0";
-const STOCK_SMK016_SIZE = 705252;
-const STOCK_SMK016_PRODUCT = "SMK-37 Pro_016";
 
 async function sha256hex(bytes) {
   const d = await crypto.subtle.digest("SHA-256", bytes);
@@ -206,11 +155,9 @@ async function sha256hex(bytes) {
 }
 
 async function validateStockPackage(bytes) {
-  for (const [size, sha, product] of [[STOCK_V15_SIZE, STOCK_V15_SHA256, STOCK_V15_PRODUCT],
-                                      [STOCK_SMK016_SIZE, STOCK_SMK016_SHA256, STOCK_SMK016_PRODUCT]])
-    if (bytes.length === size && await sha256hex(bytes) === sha && productOf(bytes) === product)
-      return { product, image: logicalImage(bytes) };
-  throw new Error("select the unmodified official FM-1 V15 file (FM-1.fwsc) or SMK-37 Pro V016 file (SMK-37_Pro_016.fwsc)");
+  if (bytes.length !== STOCK_V15_SIZE || await sha256hex(bytes) !== STOCK_V15_SHA256 || productOf(bytes) !== STOCK_V15_PRODUCT)
+    throw new Error("select the unmodified official FM-1 V15 file (FM-1.fwsc)");
+  return { product: STOCK_V15_PRODUCT, image: logicalImage(bytes) };
 }
 
 // SPDX-License-Identifier: GPL-3.0-only
@@ -226,17 +173,13 @@ const UPGRADE = [0xF0, 0x22, 0x24, 0x35, 0x7F, 0xF7];
 const MAXDATA = 512;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const IS_OTA = (id) => /^ota-/i.test(id.model);
-// the SMK-37 Pro, SMK-37 Elite, MKE-P37, Starrykey 37 Play and the SMK-37+VA mod: one keyboard under several model
-// names, so a package for one runs on all of them; an FM-1 is another device
-const SMK_FAMILY = /^(ota-)?(SMK-37[ +].*|MKE-P37|STARRYKEY-37.*)$/i;
-const sameKeyboard = (a, b) => a === b || (SMK_FAMILY.test(a) && SMK_FAMILY.test(b));   // two models
-// the update loader of SLOOP / Felucca packages ("ota-FM-1_9XX", "ota-SMK-37 Pro_9XX"). A device left in the update
-// mode of another firmware (the stock updater's loader) is never written: its loader may lay the image out differently.
-const OUR_LOADER = (id) => /^ota-(FM-1|SMK-37 Pro|SMK-37 Elite|MKE-P37)_[789]\d\d$/i.test(id.text);
-// the MIDI ports the installer may probe (never other gear): the FM-1 / SMK-37 keyboards under SLOOP / Felucca ("Felucca"), under
+// the update loader of SLOOP / Felucca packages ("ota-FM-1_9XX"). A device left in the update mode of another
+// firmware (the stock updater's loader) is never written: its loader may lay the image out differently.
+const OUR_LOADER = (id) => /^ota-FM-1_9\d\d$/i.test(id.text);
+// the MIDI ports the installer may probe (never other gear): the FM-1 under SLOOP / Felucca ("Felucca"), under
 // CLIPPER ("Clipper", its sister firmware), under a firmware named after itself ("SLOOP"), the update loaders, and
 // the names Windows / macOS give the stock firmware
-const FM1_PORT = /fm-1|smk|elite|mke-p37|starry|felucca|sloop|clipper|melodee|fomni|x0x|makkuro|snoop|vector|vox|ota|composite|sinco|usb-midi/i;
+const FM1_PORT = /fm-1|felucca|sloop|clipper|ota|composite|sinco|usb-midi/i;
 
 // errors carry a code the pages translate: notfound, model, stopped, noloader, lost, noreturn,
 // mismatch (detail: the identity the device reports), badreq, foreign (detail: the loader's identity)
@@ -407,7 +350,7 @@ class Updater {
     const dev = await this.find((id) => !IS_OTA(id));
     if (!dev) throw fail("notfound", "FM-1 not found (USB cable, and no other app using it?)", this.seen());
     const [model] = product.split("_");
-    if (!sameKeyboard(dev.id.model, model)) { dev.link.close(); throw fail("model", `the device is ${dev.id.text}, the package is for ${product}`); }
+    if (dev.id.model !== model) { dev.link.close(); throw fail("model", `the device is ${dev.id.text}, the package is for ${product}`); }
     step("start", dev.id.text);
     dev.link.send(UPGRADE);
     await sleep(2000);
@@ -442,20 +385,13 @@ class Updater {
   // resume: the device is already in update mode (loader) -> true when the write finished. Only SLOOP's
   // own loader is resumed, except for the return to the official firmware (opts.product: the official
   // package, its identity checked once the FM-1 is back, after Felucca 1.0): that one is the official
-  // loader's own image, as M-UPGRADE would write it. opts.package: the identity of the package being
-  // written; the loader's model must match it (or opts.product's) by the rule install() uses (sameKeyboard),
-  // and without either identity nothing is written
+  // loader's own image, as M-UPGRADE would write it
   async resume(image, onStep, opts = {}) {
     const ota = await this.find(IS_OTA);
     if (!ota) return false;
     if (!OUR_LOADER(ota.id) && !opts.product) {
       ota.link.close();
       throw fail("foreign", `the FM-1 is in the update mode of another firmware (${ota.id.text}): finish that update with its own updater`, ota.id.text);
-    }
-    const want = opts.product || opts.package || "";
-    if (!want || !sameKeyboard(ota.id.model.replace(/^ota-/i, ""), want.split("_")[0])) {
-      ota.link.close();
-      throw fail("model", `the device is in the update mode of ${ota.id.text}, the package is for ${want || "an unknown model"}`, ota.id.text);
     }
     const step = onStep || (() => {});
     if (!(await this.write(ota, image, step)).finished) return false;
@@ -479,7 +415,8 @@ const TEXT = {
     warn: "書き込み中は USB を抜かないでください。",
     install: "インストール", other: "English",
     editor: "エディタ（インストール後、パソコンから音色やシーケンスを編集）",
-    edOffline: "エディタをダウンロード（インターネットなしで使う：ファイルを Chrome / Edge で開く）",
+    edOffline: "エディタをダウンロード（パソコンでインターネットなしで使う：ファイルを Chrome / Edge で開く）",
+    appInstall: "アプリとしてインストール（エディタとインストーラーがオフラインで使える・Android も）",
     direct: "USB ケーブルはパソコンに直接つないでください。Probe や Transporter などの機材は不要です。",
     brick: "万一インストールに失敗して起動しなくなった場合は、復旧に Transporter が必要です:",
     beta: "これはベータ版で、不安定な場合があります。このカスタムファームウェアを使ったことで FM-1 が壊れたり不具合が起きたりしても、作者は一切の責任を負いません。自己責任でお使いください。",
@@ -514,7 +451,8 @@ const TEXT = {
     warn: "Do not unplug the USB cable while writing.",
     install: "Install", other: "日本語",
     editor: "Editor (after installing: edit sounds and sequences from the computer)",
-    edOffline: "Download the editor to use it without internet (open the file in Chrome or Edge)",
+    edOffline: "Download the editor to use it without internet on a computer (open the file in Chrome or Edge)",
+    appInstall: "Install the app (the editor and the installer offline, Android too)",
     direct: "Connect the USB cable directly to the computer. No probe or Transporter is needed.",
     brick: "If an install fails and the FM-1 no longer starts, recovering it needs a Transporter:",
     beta: "This is a beta and may be unstable. The author accepts no responsibility if your FM-1 is damaged or misbehaves because of this custom firmware. Use it at your own risk.",
@@ -556,6 +494,22 @@ function applyLang() {
 }
 $("lang").addEventListener("click", () => { lang = lang === "ja" ? "en" : "ja"; applyLang(); });
 applyLang();
+/* the site without internet (SLOOP 2.6, webapp/sw.js): opened once online, the installer, the firmware and the
+ * editor work offline too, still on https (Android: a downloaded file opens as content://, where Chrome refuses MIDI) */
+if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol))
+  navigator.serviceWorker.register("../sw.js").catch(() => {});
+{
+  let ask = null;
+  window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); ask = e; $("app").hidden = false; });
+  window.addEventListener("appinstalled", () => { ask = null; $("app").hidden = true; });
+  $("app").addEventListener("click", async () => {
+    if (!ask) return;
+    ask.prompt();
+    await ask.userChoice.catch(() => {});
+    ask = null;
+    $("app").hidden = true;
+  });
+}
 const sayK = (k, arg = "") => { lastKey = k; lastArg = arg; $("status").textContent = t(k) + arg; };
 const say = (txt) => { lastKey = null; $("status").textContent = txt; };
 const log = (t) => { $("log").textContent += t + "\n"; };
@@ -615,7 +569,7 @@ $("go").addEventListener("click", async () => {
     const ota = await up.find((id) => /^ota-/i.test(id.model));
     if (ota) {
       ota.link.close();
-      sayK((await up.resume(image, step, { package: meta.product })) ? "done" : "stopped");
+      sayK((await up.resume(image, step)) ? "done" : "stopped");
     } else {
       await up.install(image, meta.product, step);
     }
