@@ -1,5 +1,12 @@
 # Changes
 
+## Snoop37 2.6.1
+
+- About screen without the repository link (it names SLOOP's repository, as SLOOP does).
+- The SMK-37 hardware support now matches the upstream pull request
+  [#112](https://github.com/isod89/sloop-fm1/pull/112); the look matches the branch `smk37-snoop-look`.
+- Snoop37 lives in the SLOOP fork, <https://github.com/genkigenki/sloop-fm1> (branch `snoop37`).
+
 ## Snoop37 2.6
 
 From here on Snoop37's version number follows the SLOOP release it is based on (the release before was 0.1.x).

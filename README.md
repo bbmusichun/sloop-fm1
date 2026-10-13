@@ -1,24 +1,21 @@
 # Snoop37
 
-> Snoop37 is [SLOOP](https://github.com/isod89/sloop-fm1) by **isod89** for the SMK-37, with extras for its
-> hardware. SLOOP's maintainers suggested this fork as its home
-> ([isod89/sloop-fm1#112](https://github.com/isod89/sloop-fm1/pull/112)). All credit for SLOOP to isod89.
+Snoop37 — [SLOOP](https://github.com/isod89/sloop-fm1) by **isod89** for the M-Vave SMK-37, with an optional
+look. The SMK-37 support is offered upstream: [#112](https://github.com/isod89/sloop-fm1/pull/112) (hardware),
+[smk37-snoop-look](https://github.com/genkigenki/sloop-fm1/tree/smk37-snoop-look) (look). Install:
+<https://genkigenki.github.io/smk37/>
 
 <img src="docs/img/intro.webp" width="360" alt="The Snoop37 intro on the SMK-37 display">
-
-**Alternative firmware for the M-Vave SMK-37 (SMK-37 Pro, Elite or MKE-P37), based on FM-1 firmwares.**
-
-**Install it from the browser:** [genkigenki.github.io/smk37](https://genkigenki.github.io/smk37/) (Chrome or Edge, USB cable, about a minute).
 
 Snoop37 turns the SMK-37 MIDI keyboard into a stand-alone four-track groovebox: three synth tracks and a
 drum machine, synthesised, played and sequenced on the keyboard's own chip. It is a port of [SLOOP](https://github.com/isod89/sloop-fm1) 2.6 by **isod89**, the
 live groovebox firmware for the M-Vave FM-1, which in turn is based on
 [Felucca](https://github.com/hugelton/Felucca) by **Leo Kuroshita / Hügelton Instruments**. The FM-1 and the
 SMK-37 share the same JieLi AC791N (WL82) chip, boot chain and update loader; only the panel wiring differs.
-Snoop37 adds the SMK-37 board support (keys, pads, faders, wheels, knobs, display, LEDs, flash map,
-installer) and its own look and sound (animated intro and boot jingle).
+This branch adds the SMK-37 board support (keys, pads, faders, wheels, knobs, display, LEDs, flash map,
+installer) and the optional look (animated intro and boot jingle).
 
-> **Status: experimental. Snoop37 2.6, based on SLOOP 2.6** (0.1.x was tested on an SMK-37 Pro). Unofficial
+> **Status: experimental. Snoop37 2.6.1, based on SLOOP 2.6** (0.1.x was tested on an SMK-37 Pro). Unofficial
 > firmware, not affiliated with or endorsed by M-Vave. Install at your own risk and read [Safety](#safety) first.
 
 Everything SLOOP does is described in [README-SLOOP.md](README-SLOOP.md) (SLOOP's own README),
@@ -41,7 +38,8 @@ Snoop37 2.6 moves to SLOOP 2.6 (changes: [CHANGES.md](CHANGES.md); SLOOP's own l
   a note's **LEN** and step velocity, **TEXTURE** (a looping bed under the mix), **live drum mutes** (PARA + a
   black key), step entry from a MIDI keyboard, Program Change, SAVE > PROJECT > ERASE, a bolder screen font and a
   look-ahead master limiter.
-- SYSTEM's about screen shows `2.6 (SLOOP 2.6)`.
+- SYSTEM's about screen shows `2.6.1 (SLOOP 2.6)` (2.6.1: without the repository link; the SMK-37 hardware
+  support as in the upstream pull request #112).
 
 **After updating from 0.1.x, check two settings once:** HOME menu > SYSTEM > **BOOT LOGO**, and GLO > MIDI 2 >
 **IN** (the MIDI channel SLOOP listens on). SLOOP 2.6 stores the MIDI IN channel in the bits where 0.1.x kept the
@@ -92,8 +90,10 @@ Not used yet: the pedal jack, TRS MIDI OUT, pad pressure.
 
 | Branch | What |
 | --- | --- |
-| `main` | Snoop37: SLOOP 2.6 + the SMK-37 port + the Snoop37 intro, jingle and look |
-| `smk37-board` | SLOOP 2.5 + the SMK-37 board support only (no Snoop37 additions): the base for porting other FM-1 firmwares (Felucca, X0X, FoMni, Melodee, ...) to the SMK-37. See [fm1-to-smk37](https://github.com/genkigenki/fm1-to-smk37) for the hardware facts and the porting guide |
+| `snoop37` | Snoop37: SLOOP 2.6 + the SMK-37 support + the optional look (`SNOOP37=1`) |
+| `smk37` | the SMK-37 support offered to SLOOP ([#112](https://github.com/isod89/sloop-fm1/pull/112)) |
+| `smk37-snoop-look` | the look as an opt-in build flag, on top of `smk37` |
+| `main` | SLOOP as upstream |
 
 ## Build
 
@@ -170,7 +170,7 @@ Snoop37 is free software under the **GNU General Public License v3.0** ([LICENSE
 third-party parts keep their own licenses (see [LICENSING.md](LICENSING.md) and [LICENSES/](LICENSES)).
 
 - **SLOOP** – isod89, <https://github.com/isod89/sloop-fm1> (the groovebox, its engines, sounds, UI, installer and
-  tools; this repository is a fork of SLOOP 2.6).
+  tools; this repository is a fork of SLOOP).
 - **Felucca** – Leo Kuroshita (@kurogedelic), Hügelton Instruments, <https://github.com/hugelton/Felucca> (the
   original open FM-1 firmware SLOOP is built on).
 - **SMK-37 board support and the Snoop37 additions** – genkigenki.
