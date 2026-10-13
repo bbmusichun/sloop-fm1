@@ -8,7 +8,7 @@
  * right, as if MASTER were all the way up: the picture does not follow the volume knob, even at 0), the tracks' peaks (fx.c / drums.c, as the TRACKS meters read them), the notes that started
  * (voice.c vis_hit) and the transport clock. Everything is drawn in the main loop, every other frame, in two
  * bands of 120 rows (the canvas holds 124): no cost to the audio. */
-#define VIS_N VIS_STYLES          /* (12) */
+#define VIS_N VIS_STYLES          /* (12; SNOOP37 13: snoop_theme.h) */
 static const char *const VIS_NAME[VIS_N] = {"OSCILLOSCOPE", "SPECTRUM", "SPECTROGRAM", "LISSAJOUS", "VU METERS",
                                             "CIRCLE", "TAPE", "LCD", "BOUNCE", "ORBIT", "WIRES", VIS_LAST_NAMES};
 /* vis_on, vis_shown_last, vis_name_t: ui_draw.c; vis_style: panel.c (kept with the settings) */
@@ -607,6 +607,10 @@ static void vis_draw(void)
         return;
     }
     vis_update();
+#if SNOOP37
+    if (mkv_draw(vis_style % VIS_N))                    /* SNOOP, WATERFALL (snoop_vis.c) */
+        return;
+#endif
     for (pass = 0; pass < 2u; pass++) {
         cv_begin(240, 120, C_BLACK);
         cv_oy = -(int32_t)(pass * 120u);

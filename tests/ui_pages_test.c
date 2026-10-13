@@ -23,7 +23,7 @@
 #include "hostsim.c"
 #undef main
 #include <assert.h>
-/* SLOOP's words on the screens (felucca.c) */
+/* SLOOP's words on the screens (felucca.c without SNOOP37) */
 #define BRAND_NAME "SLOOP"
 #define BRAND_SAIL_X 96
 #define BRAND_BASED "BASED ON FELUCCA"
