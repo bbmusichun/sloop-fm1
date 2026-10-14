@@ -12,6 +12,11 @@
 - **Your own map (CC MAP USER):** PATCH held + OCTAVE+ (or HOME menu > DAW > EDIT MAP): touch a control, then KNOB 1
   TYPE, KNOB 2 NUMBER, KNOB 3 CHANNEL; OCTAVE+ the next, OCTAVE− done. Or the web editor's new **DAW MAP** tab (read,
   send, save / open a file). HOME menu > DAW: CC MAP, KNOBS (ABSOLUTE / RELATIVE), RESET MAP.
+- **The way back to the M-Vave firmware keeps working:** the sample slots USR1 / USR2 share their flash with the
+  stock firmware's key, knob and fader mapping, which it trusts as long as its end marker is there (after a return to
+  stock, keys sent one note). Now that marker is erased before the first sample is stored there, and at power-on when
+  it sits over sample data, so the stock firmware rebuilds its factory mapping; an untouched stock mapping stays. The
+  web editor's Settings tab can erase it on request (**Prepare the return to M-Vave**).
 - HOME menu: new sections **PLAY** (KEY VELOCITY on K5, BEND UP K6, BEND DOWN K7: they leave MIDI) and **DAW**; MIDI is
   TRS MIDI OUT, MODE, CHANNEL, LOCAL. The section tabs scroll.
 
