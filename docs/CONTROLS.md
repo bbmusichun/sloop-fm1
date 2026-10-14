@@ -7,7 +7,7 @@ Kept up to date with the firmware (this repository, branch `main`).
 
 | FM-1 printed | SLOOP function | SMK-37 printed | Snoop37 (now) | Proposal |
 |---|---|---|---|---|
-| MASTER (pot, top left) | output volume | K1 | master volume (virtual pot, 24 steps a click) | cap: "M" |
+| MASTER (pot, top left) | output volume | K1 | master volume (virtual pot, 24 steps a click; HOME menu > AUDIO > LIMITER: SOFT / CLASSIC) | cap: "M" |
 | SELECT (big encoder) | tempo (TRACKS), page ◀▶, visualiser style, menu section | K2 | SELECT: tempo / pages | cap: "T" |
 | ALGORITHM | select track 1–4 | K3 | track | cap: "4" |
 | PRESETS | sound (synth) / kit (drums) | K4 | sound / kit, the pad picker shows them | cap: note symbol |
@@ -15,8 +15,9 @@ Kept up to date with the firmware (this repository, branch `main`).
 | KNOB 2 | dial 2 on screen (green) | K6 | dial 2 | cap: green 30,204,112 |
 | KNOB 3 | dial 3 on screen (yellow) | K7 | dial 3 | cap: yellow 255,198,24 |
 | KNOB 4 | dial 4 on screen (orange) | K8 | dial 4 | cap: orange 255,98,26 |
+| — | — | KNOB LAYOUT = SMK | HOME menu > SCREEN > KNOB LAYOUT (K7): K1–K4 the dials 1–4, K5 master, K6 SELECT, K7 PRESETS, K8 track; FM-1 (default) as above | — |
 | — | — | FADER 1–4 | tracks 1–4 (4 = drums), by FADER BANK: A level, B filter (low-pass ◀ open ▶ high-pass), C reverb, D delay; a fader takes over once moved | master FX bank |
-| — (no wheels used by SLOOP) | — | PITCH wheel | pitch bend, selected synth track: ±BEND RANGE (HOME menu > MIDI, K6: 1, 2, 3, 4, 5, 7, 12 semitones; default 7) | — |
+| — (no wheels used by SLOOP) | — | PITCH wheel | pitch bend, selected synth track: HOME menu > MIDI > BEND UP (K6) / BEND DOWN (K7), OFF, 1, 2, 3, 4, 5, 7, 12 semitones each; default 7 / 7 | — |
 | — | — | MOD wheel | vibrato 10 Hz, up to ±1 semitone (up = more) | — |
 | — | — | PEDAL jack | — | sustain or start/stop |
 
@@ -39,9 +40,10 @@ Kept up to date with the firmware (this repository, branch `main`).
 | OCT− | octave down | drums: ghost hits | OCTAVE− | OCT− | — |
 | OCT+ | octave up | drums: hard hits | OCTAVE+ | OCT+ | — |
 | — | — | — | KNOB BANK | pins the pad sound picker | — |
-| — | — | — | FADER BANK | the fader bank screen; pressed again, < > or K2: the next bank A→B→C→D (closes after 4 s; lit while up; closes the pad picker) | — |
-| — | — | — | < | page back (as SELECT, never tempo); SEQ held: step page back; visualiser: style | — |
-| — | — | — | > | page forward; SEQ held: step page forward; visualiser: style | — |
+| — | — | — | FADER BANK | the fader bank screen; pressed again, < > or SELECT: the next bank A→B→C→D (closes after 4 s; lit while up; closes the pad picker) | — |
+| — | — | — | KNOB BANK + FADER BANK | the pads on the PLAY screen: DRUM KIT (default) ↔ STEPS (as the stock PAD BANK combo) |
+| — | — | — | < | page back (as SELECT, never tempo); SEQ held or pads on STEPS: step page back; visualiser: style | — |
+| — | — | — | > | page forward; SEQ held or pads on STEPS: step page forward; visualiser: style | — |
 
 ## Keys and pads
 
@@ -50,7 +52,7 @@ Kept up to date with the firmware (this repository, branch `main`).
 | 27 keys F3–G5 | notes; in layers: tiles (steps, FX, mix…) | keys F3–G5 (middle 27) | same, with velocity |
 | — | — | keys C3–E3 (lowest 5) | synth tracks: notes; drum track: C3 kick, D3 snare, E3 hat (black keys = left white key) |
 | — | — | keys G#5–C6 (highest 5) | synth tracks: notes; drum track: G#5 cowbell, A5 open hat, B5 crash, C6 ride |
-| LEDs under 27 keys | what is on / playing | 16 RGB pads | pads = the 16 white keys (top row 1–8, bottom 9–16), velocity; LEDs in the screen's track colours (blue, green, yellow, orange): steps lit, playhead/hits bright, off = dark; SCALE layer: piano layout; SAVE layer: slots used green, free white |
+| LEDs under 27 keys | what is on / playing | 16 RGB pads | PLAY screen: DRUM KIT (default; a pad a drum sound whatever track is selected, velocity; orange, dim / bright while it sounds) or STEPS (KNOB BANK + FADER BANK; the selected track's 16 steps of the page, top row 1–8: empty dim white, set in the track's colour, playhead white; tap sets / clears; drums: the sound last played). Layers: SEQ / FX / GLO / SAVE tiles, SCALE piano, EDIT / ARP held the white keys |
 
 ## Power-on and special combos (same as SLOOP on FM-1)
 
@@ -59,3 +61,4 @@ Kept up to date with the firmware (this repository, branch `main`).
 | OCTAVE− held at power-on | USB rescue |
 | OCTAVE− + OCTAVE+ held at power-on | hardware calibration (re-teach buttons, knobs and the wheels) |
 | OCTAVE− + OCTAVE+ held 5 s, stopped | update mode (UBOOT) |
+| KNOB BANK + FADER BANK | the pads: DRUM KIT ↔ STEPS |

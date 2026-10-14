@@ -1,5 +1,23 @@
 # Changes
 
+## Snoop37 2.6.5
+
+- **LIMITER:** HOME menu > AUDIO > **LIMITER** (K8): SOFT (default) / CLASSIC. SOFT gives the mix 9 dB more headroom
+  at the power-on MASTER position and lets the limiter act only near full scale, so a held chord no longer turns the
+  whole mix down ("one note loud, a chord quieter"). MASTER's top is as loud as before (louder peaks pass): turn
+  MASTER up a few clicks after updating. CLASSIC is SLOOP's limiter and MASTER curve.
+- **BEND UP / BEND DOWN** replace BEND RANGE: HOME menu > MIDI > **BEND UP** (K6), **BEND DOWN** (K7), each OFF, 1, 2,
+  3, 4, 5, 7 or 12 semitones, default 7 / 7 (e.g. +2 up, −12 down). A 2.6.4 BEND RANGE comes back as both.
+- **KNOB LAYOUT:** HOME menu > SCREEN > **KNOB LAYOUT** (K7): FM-1 (default, as before) / SMK: K1–K4 the four dials on
+  the screen, K5 master volume, K6 SELECT (tempo / pages), K7 PRESETS (sound / kit), K8 ALGORITHM (track). Menu rows,
+  help lines and the calibration screen name the knobs as they are; the hardware calibration stays per printed knob.
+- **Pads: DRUM KIT by default.** On the PLAY screen the pads play the drum kit whatever track is selected (a pad a
+  sound, with velocity; the keys play the selected track). **KNOB BANK + FADER BANK** (the stock PAD BANK combo)
+  switches the pads to **STEPS** (the selected track's 16 steps of the page: tap to set / clear, `<` `>` the page;
+  drums: the sound last played) and back. The pads no longer mirror the keys there. Layers keep their pads (SEQ, FX,
+  GLO, SAVE grids, SCALE piano, EDIT / ARP held: the notes).
+- HOME menu: KEY VELOCITY moves to MIDI (still K8); AUDIO's K8 is LIMITER.
+
 ## Snoop37 2.6.4
 
 - **TRS MIDI OUT:** the 3.5 mm jack sends what goes out over USB MIDI (the keys and pads, the sequencer with
