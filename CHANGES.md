@@ -1,5 +1,20 @@
 # Changes
 
+## Snoop37 2.6.6
+
+- **DAW mode:** the keyboard as a MIDI controller (USB, and the TRS jack). **`<` + `>`** together (or HOME menu > MIDI >
+  **MODE**) switches SYNTH ↔ DAW, with a screen that says which; kept over power-off. The keys play notes on
+  **CHANNEL**; K1–K8, the faders, the pads, 13 buttons and the wheels send CC, notes, MMC or pitch bend as the map says.
+  KNOB BANK / FADER BANK / both: banks A / B of the knobs, faders, pads (as the stock firmware). OCTAVE− / +: the
+  octave. PATCH: **LOCAL** ON / OFF (the keys also play the selected track, NOTE pads the drum kit; OFF by default).
+  The screen shows the last control's message and value and the eight knobs as bars; the pads light by kind. SLOOP's
+  sequencer stops; MIDI IN still plays SLOOP. Default map and controls: [SMK37.md](SMK37.md#daw-mode).
+- **Your own map (CC MAP USER):** PATCH held + OCTAVE+ (or HOME menu > DAW > EDIT MAP): touch a control, then KNOB 1
+  TYPE, KNOB 2 NUMBER, KNOB 3 CHANNEL; OCTAVE+ the next, OCTAVE− done. Or the web editor's new **DAW MAP** tab (read,
+  send, save / open a file). HOME menu > DAW: CC MAP, KNOBS (ABSOLUTE / RELATIVE), RESET MAP.
+- HOME menu: new sections **PLAY** (KEY VELOCITY on K5, BEND UP K6, BEND DOWN K7: they leave MIDI) and **DAW**; MIDI is
+  TRS MIDI OUT, MODE, CHANNEL, LOCAL. The section tabs scroll.
+
 ## Snoop37 2.6.5
 
 - **LIMITER:** HOME menu > AUDIO > **LIMITER** (K8): SOFT (default) / CLASSIC. SOFT gives the mix 9 dB more headroom

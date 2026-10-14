@@ -15,7 +15,7 @@ SMK-37 share the same JieLi AC791N (WL82) chip, boot chain and update loader; on
 This branch adds the SMK-37 board support (keys, pads, faders, wheels, knobs, display, LEDs, flash map,
 installer) and the optional look (animated intro and boot jingle).
 
-> **Status: experimental. Snoop37 2.6.5, based on SLOOP 2.6** (0.1.x was tested on an SMK-37 Pro). Unofficial
+> **Status: experimental. Snoop37 2.6.6, based on SLOOP 2.6** (0.1.x was tested on an SMK-37 Pro). Unofficial
 > firmware, not affiliated with or endorsed by M-Vave. Install at your own risk and read [Safety](#safety) first.
 
 Everything SLOOP does is described in [README-SLOOP.md](README-SLOOP.md) (SLOOP's own README),
@@ -32,17 +32,17 @@ Snoop37 2.6 moves to SLOOP 2.6 (changes: [CHANGES.md](CHANGES.md); SLOOP's own l
 - **MIDI LEARN:** GLOBE + F#3, turn the SLOOP knob (K5–K8) you want, move a knob of your controller, GLOBE + F#3
   again. HOME menu (PATCH held) > SYSTEM > MIDI LEARN CLEAR forgets them.
 - **Pitch bend and sustain pedal from MIDI IN** (range: GLO > MIDI 2 > BEND, 1–12 semitones). The SMK-37's own
-  pitch wheel has its own range (HOME menu > MIDI > BEND UP / BEND DOWN, default 7 / 7) on the selected synth track.
+  pitch wheel has its own range (HOME menu > PLAY > BEND UP / BEND DOWN, default 7 / 7) on the selected synth track.
 - **A MIDI channel per track** (GLO > MIDI, in and out) and **MIDI IN on one channel** (GLO > MIDI 2 > IN).
 - An **INSERT** effect on every track, **LFO 2** with tempo sync, **ENV SYNC**, ANALOG's filter as LP / BP / HP,
   a note's **LEN** and step velocity, **TEXTURE** (a looping bed under the mix), **live drum mutes** (PARA + a
   black key), step entry from a MIDI keyboard, Program Change, SAVE > PROJECT > ERASE, a bolder screen font and a
   look-ahead master limiter.
-- SYSTEM's about screen shows `2.6.5 (SLOOP 2.6)` (2.6.1: without the repository link; the SMK-37 hardware
+- SYSTEM's about screen shows `2.6.6 (SLOOP 2.6)` (2.6.1: without the repository link; the SMK-37 hardware
   support as in the upstream pull request #112; 2.6.2: HOME menu > AUDIO > VELOCITY; 2.6.3: KEY VELOCITY, the
   menu rows named K5–K8, the visualiser without the SNOOP and WATERFALL styles; 2.6.4: TRS MIDI OUT, BEND RANGE,
   the wheels in the hardware calibration; 2.6.5: LIMITER SOFT / CLASSIC, BEND UP / DOWN, KNOB LAYOUT, the pads
-  DRUM KIT / STEPS).
+  DRUM KIT / STEPS; 2.6.6: DAW mode, the HOME menu's PLAY and MIDI sections).
 
 **After updating from 0.1.x, check two settings once:** HOME menu > SYSTEM > **BOOT LOGO**, and GLO > MIDI 2 >
 **IN** (the MIDI channel SLOOP listens on). SLOOP 2.6 stores the MIDI IN channel in the bits where 0.1.x kept the
@@ -57,8 +57,8 @@ Everything of SLOOP 2.6 (four tracks, the synthesis engines and sounds, drum kit
 locks, USB audio, MIDI clock, the menus and screens), mapped onto the SMK-37's controls:
 
 - **37 velocity keys.** The middle 27 keys (F3–G5) are the FM-1's note keys (notes, steps, menus), now with
-  velocity (the stock two-contact timing and the unit's own factory velocity curves). HOME menu > MIDI > **KEY VELOCITY**
-  (K8) sets how keys and pads play: DYNAMIC (as played, default), SOFT (a light touch plays louder), HARD (loud needs
+  velocity (the stock two-contact timing and the unit's own factory velocity curves). HOME menu > PLAY > **KEY VELOCITY**
+  (K5) sets how keys and pads play: DYNAMIC (as played, default), SOFT (a light touch plays louder), HARD (loud needs
   a hard hit), FIXED 64 / 100 / 127 (every note at that velocity; 100 is the FM-1's). The 10 outer keys play notes on
   the synth tracks and drums on the drum track: C3 kick, D3 snare, E3 hat; G#5 cowbell, A5 open hat, B5 crash,
   C6 ride (black keys as their left white key).
@@ -73,12 +73,17 @@ locks, USB audio, MIDI clock, the menus and screens), mapped onto the SMK-37's c
   the four tracks (track 4 = drums); a fader takes over once it is moved. FADER BANK opens a screen with the four
   banks and what each fader sets; pressed again, `<` `>` or SELECT (K2) change the bank. It closes after 4 s or with PATCH.
   Only one bank screen is up at a time: KNOB BANK (pad picker) and FADER BANK close each other.
-- **Wheels.** Pitch wheel: pitch bend on the selected synth track, HOME menu > MIDI > **BEND UP** (K6) and
+- **Wheels.** Pitch wheel: pitch bend on the selected synth track, HOME menu > PLAY > **BEND UP** (K6) and
   **BEND DOWN** (K7): OFF, 1, 2, 3, 4, 5, 7 or 12 semitones each way (default 7 / 7). Mod wheel: vibrato (10 Hz, up to ±1 semitone). Both calibrate themselves;
   the hardware calibration (OCTAVE− + OCTAVE+ at power-on) also teaches them, for the full range on the full travel.
 - **TRS MIDI OUT.** The 3.5 mm jack sends the same MIDI as USB (keys, pads, sequencer), with or without a computer:
   HOME menu > MIDI > **TRS MIDI OUT** (K5), ON by default. A TRS-to-DIN adapter, type A (if a synth does not
   respond, try type B).
+- **DAW mode.** `<` + `>` together (or HOME menu > MIDI > **MODE**) make the keyboard a MIDI controller and back:
+  the keys play notes on CHANNEL, the knobs, faders, pads, buttons and wheels send CC, notes, MMC or pitch bend as
+  a map says (a default one, or your own: PATCH held + OCTAVE+ on the keyboard, or the web editor's DAW MAP tab);
+  KNOB BANK / FADER BANK / both switch banks A / B; PATCH: LOCAL ON / OFF (the keys also play SLOOP, or not). The
+  map, the defaults and the controls: [SMK37.md](SMK37.md#daw-mode).
 - **8 knobs as the FM-1's top row:** K1 master volume, K2 SELECT (tempo, pages), K3 track, K4 sound / kit,
   K5–K8 the four dials on the screen. One encoder step per detent. HOME menu > SCREEN > **KNOB LAYOUT** = SMK puts
   the dials on K1–K4, master volume on K5, SELECT on K6, sound / kit on K7, track on K8.
