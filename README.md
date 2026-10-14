@@ -2,7 +2,7 @@
 
 Snoop37 — [SLOOP](https://github.com/isod89/sloop-fm1) by **isod89** for the M-Vave SMK-37, with an optional
 look. The SMK-37 support is offered upstream: [#112](https://github.com/isod89/sloop-fm1/pull/112) (hardware),
-[smk37-snoop-look](https://github.com/genkigenki/sloop-fm1/tree/smk37-snoop-look) (look). Install:
+[#130](https://github.com/isod89/sloop-fm1/pull/130) (look). Install:
 <https://genkigenki.github.io/smk37/>
 
 <img src="docs/img/intro.webp" width="360" alt="The Snoop37 intro on the SMK-37 display">
