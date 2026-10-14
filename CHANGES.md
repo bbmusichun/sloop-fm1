@@ -15,7 +15,9 @@
   sound, with velocity; the keys play the selected track). **KNOB BANK + FADER BANK** (the stock PAD BANK combo)
   switches the pads to **STEPS** (the selected track's 16 steps of the page: tap to set / clear, `<` `>` the page;
   drums: the sound last played) and back. The pads no longer mirror the keys there. Layers keep their pads (SEQ, FX,
-  GLO, SAVE grids, SCALE piano, EDIT / ARP held: the notes).
+  GLO, SAVE grids, SCALE piano, EDIT / ARP held: the notes). While recording, the DRUM KIT pads record into the drum
+  track whatever track is armed (the keys into the armed one).
+- SEQ PLAY and SEQ REC work while the HOME menu is up (start / stop, record arm).
 - HOME menu: KEY VELOCITY moves to MIDI (still K8); AUDIO's K8 is LIMITER.
 
 ## Snoop37 2.6.4
