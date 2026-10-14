@@ -73,7 +73,7 @@ update mode (UBOOT).
 | FX | effect pages | punch-in FX on pads | FX | FX |
 | SEL | key / chord pages | key layer (pads = piano: scale green, root brighter) | SCALE | SEL |
 | EDIT | sound pages, drum kit | erase layer | PARA | EDIT |
-| ARP | arp pages (MODE on K1: OFF switches the arpeggiator off) | note repeat (rolls) | ARP | ARP; LED lit while the selected track's arpeggiator runs |
+| ARP | arp pages (MODE on K5: OFF switches the arpeggiator off) | note repeat (rolls) | ARP | ARP; LED lit while the selected track's arpeggiator runs |
 | SEQ | step / pattern pages | step layer (steps 1–16) | SEQ | SEQ |
 | GLO | global / master / system | mix layer (mute, solo, fill, tap) | GLOBE | GLO |
 | SAVE | song screen / save | song layer (slots A–D: used green, free white) | BT | SAVE (SLOOP has no Bluetooth) |
@@ -95,10 +95,10 @@ update mode (UBOOT).
 
 ## Velocity
 
-HOME menu (PATCH held) > AUDIO > **VELOCITY**, on K4, sets how the 37 keys and the pads play. It applies to the
+HOME menu (PATCH held) > AUDIO > **KEY VELOCITY**, on K8, sets how the 37 keys and the pads play. It applies to the
 notes, their MIDI out and the drum levels; OCT− / OCT+ held still play ghost / hard drums. Kept with the settings.
 
-| VELOCITY | the notes play |
+| KEY VELOCITY | the notes play |
 |---|---|
 | DYNAMIC (default) | as played (the unit's factory velocity curves) |
 | SOFT | louder for a light touch (32 → 56, 64 → 96) |

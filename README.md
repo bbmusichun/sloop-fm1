@@ -15,7 +15,7 @@ SMK-37 share the same JieLi AC791N (WL82) chip, boot chain and update loader; on
 This branch adds the SMK-37 board support (keys, pads, faders, wheels, knobs, display, LEDs, flash map,
 installer) and the optional look (animated intro and boot jingle).
 
-> **Status: experimental. Snoop37 2.6.2, based on SLOOP 2.6** (0.1.x was tested on an SMK-37 Pro). Unofficial
+> **Status: experimental. Snoop37 2.6.3, based on SLOOP 2.6** (0.1.x was tested on an SMK-37 Pro). Unofficial
 > firmware, not affiliated with or endorsed by M-Vave. Install at your own risk and read [Safety](#safety) first.
 
 Everything SLOOP does is described in [README-SLOOP.md](README-SLOOP.md) (SLOOP's own README),
@@ -38,8 +38,9 @@ Snoop37 2.6 moves to SLOOP 2.6 (changes: [CHANGES.md](CHANGES.md); SLOOP's own l
   a note's **LEN** and step velocity, **TEXTURE** (a looping bed under the mix), **live drum mutes** (PARA + a
   black key), step entry from a MIDI keyboard, Program Change, SAVE > PROJECT > ERASE, a bolder screen font and a
   look-ahead master limiter.
-- SYSTEM's about screen shows `2.6.2 (SLOOP 2.6)` (2.6.1: without the repository link; the SMK-37 hardware
-  support as in the upstream pull request #112; 2.6.2: HOME menu > AUDIO > VELOCITY).
+- SYSTEM's about screen shows `2.6.3 (SLOOP 2.6)` (2.6.1: without the repository link; the SMK-37 hardware
+  support as in the upstream pull request #112; 2.6.2: HOME menu > AUDIO > VELOCITY; 2.6.3: KEY VELOCITY, the
+  menu rows named K5–K8, the visualiser without the SNOOP and WATERFALL styles).
 
 **After updating from 0.1.x, check two settings once:** HOME menu > SYSTEM > **BOOT LOGO**, and GLO > MIDI 2 >
 **IN** (the MIDI channel SLOOP listens on). SLOOP 2.6 stores the MIDI IN channel in the bits where 0.1.x kept the
@@ -54,8 +55,8 @@ Everything of SLOOP 2.6 (four tracks, the synthesis engines and sounds, drum kit
 locks, USB audio, MIDI clock, the menus and screens), mapped onto the SMK-37's controls:
 
 - **37 velocity keys.** The middle 27 keys (F3–G5) are the FM-1's note keys (notes, steps, menus), now with
-  velocity (the stock two-contact timing and the unit's own factory velocity curves). HOME menu > AUDIO > **VELOCITY**
-  (K4) sets how keys and pads play: DYNAMIC (as played, default), SOFT (a light touch plays louder), HARD (loud needs
+  velocity (the stock two-contact timing and the unit's own factory velocity curves). HOME menu > AUDIO > **KEY VELOCITY**
+  (K8) sets how keys and pads play: DYNAMIC (as played, default), SOFT (a light touch plays louder), HARD (loud needs
   a hard hit), FIXED 64 / 100 / 127 (every note at that velocity; 100 is the FM-1's). The 10 outer keys play notes on
   the synth tracks and drums on the drum track: C3 kick, D3 snare, E3 hat; G#5 cowbell, A5 open hat, B5 crash,
   C6 ride (black keys as their left white key).
@@ -79,8 +80,7 @@ locks, USB audio, MIDI clock, the menus and screens), mapped onto the SMK-37's c
 - **Snoop37 look and sound** (build flag `SNOOP37=1`): an animated 3D intro (a neon doghouse with a piano-key
   roof, a low-poly beagle, a synthwave sun and grid, mountains that follow the music) with its own boot jingle
   (a small FM synth: a deep-note swell into D major, key bells, a final ping), fading into the UI; a key, pad or
-  button press skips it. The firmware-update screens use the same scene, and the visualiser gains the SNOOP and
-  WATERFALL styles. SYSTEM > BOOT LOGO picks the intro: SNOOP37, SLOOP or none.
+  button press skips it. The firmware-update screens use the same scene. SYSTEM > BOOT LOGO picks the intro: SNOOP37, SLOOP or none.
 - **Flash safety built in:** the firmware and its update loader write only to an explicit allow-list of flash
   ranges (checked at compile time and again in the flash driver); the factory calibration, Bluetooth pairing and
   key_mac areas are never written.

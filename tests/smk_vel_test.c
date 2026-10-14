@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * SMK-37 Pro: Copyright (C) 2026 M. Geisler (genkigenki/makkuro) */
-/* SMK-37 menu VELOCITY (firmware/src/smk_vel.h): each mode -> the velocity a note gets and the drum level it
+/* SMK-37 menu KEY VELOCITY (firmware/src/smk_vel.h): each mode -> the velocity a note gets and the drum level it
  * plays, a release stays a release, the bits in the settings word (older data: DYNAMIC). */
 #include "core.h"
 #include "smk_vel.h"

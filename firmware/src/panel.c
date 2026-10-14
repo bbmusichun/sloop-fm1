@@ -124,7 +124,7 @@ static uint32_t lights_word(void)
            | (uint32_t)(boot_logo % BOOT_N) << 26
 #endif
 #if BOARD_SMK37
-           | vel_word(vel_mode)                                /* SMK-37: menu VELOCITY, bits 28..30 (smk_vel.h) */
+           | vel_word(vel_mode)                                /* SMK-37: menu KEY VELOCITY, bits 28..30 (smk_vel.h) */
 #endif
         ;
 }

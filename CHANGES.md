@@ -1,5 +1,13 @@
 # Changes
 
+## Snoop37 2.6.3
+
+- HOME menu > AUDIO > VELOCITY is now **KEY VELOCITY**, and it is set with **K8** (2.6.2 said K4).
+- The HOME menu's rows name the SMK-37's knobs: **K5–K8** (the FM-1's KNOB 1–4; K1–K4 are MASTER, SELECT,
+  ALGORITHM, PRESETS). The ARP mode is on K5.
+- The visualiser no longer has the SNOOP and WATERFALL styles: it has SLOOP's 12 again (the last one: SLOOP).
+  A style kept from 2.6.2 reads as SLOOP (was SNOOP) or OSCILLOSCOPE (was WATERFALL).
+
 ## Snoop37 2.6.2
 
 - HOME menu > AUDIO > **VELOCITY** (K4): DYNAMIC (as played, the default), SOFT (a light touch plays louder), HARD

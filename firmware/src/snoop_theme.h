@@ -6,11 +6,6 @@
 #define BRAND_NAME "SNOOP37"
 #define BRAND_SAIL_X 140
 #define BRAND_BASED "BASED ON SLOOP BY ISOD89"
-#define BRAND_VERSION "2.6.2"    /* Snoop37's version, before SLOOP's on SYSTEM's about screen */
+#define BRAND_VERSION "2.6.3"    /* Snoop37's version, before SLOOP's on SYSTEM's about screen */
 #define BRAND_CRASH "SNOOP37 CRASH"
 #define BRAND_RESCUE "SNOOP37 USB RESCUE"
-
-#define VIS_STYLES 13u
-#define VIS_LAST_NAMES "SNOOP", "WATERFALL"
-#define VIS_N_STR "/13"
-static int mkv_draw(uint32_t s);

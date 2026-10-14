@@ -1,14 +1,14 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
 /* SLOOP menu (HOME held), in sections as the pages are (2.4): SCREEN (COLOR, ZOOM), LIGHTS (LIGHTS, KEYS, NOTES),
- * AUDIO (LOWCUT, USB AUDIO, USB SERIAL; SMK-37: VELOCITY), SYSTEM (HARDWARE CALIBRATION, LEARN CLEAR (2.6), ABOUT).
+ * AUDIO (LOWCUT, USB AUDIO, USB SERIAL; SMK-37: KEY VELOCITY), SYSTEM (HARDWARE CALIBRATION, LEARN CLEAR (2.6), ABOUT).
  * SELECT goes to the section before / after (stopping at the ends), KNOB 1..3 (a fourth row: 4) set the section's
  * settings in order (the knob's colour marks its row), PRESETS moves the cursor; OCT+ steps the cursor's setting
  * round or opens it (CALIBRATION, ABOUT), OCT- closes (from ABOUT: back to the section). */
 /* ------------------------------------------------------------ menu --- */
 enum { MI_COLOR, MI_ZOOM, MI_LIGHTS, MI_KEYS, MI_NOTES, MI_LOWCUT, MI_USB, MI_SERIAL,
 #if BOARD_SMK37
-       MI_VEL,                                     /* SMK-37: AUDIO > VELOCITY (K4), smk_vel.h */
+       MI_VEL,                                     /* SMK-37: AUDIO > KEY VELOCITY (K8), smk_vel.h */
 #endif
 #if SNOOP37
        MI_BOOT,
@@ -17,7 +17,7 @@ enum { MI_COLOR, MI_ZOOM, MI_LIGHTS, MI_KEYS, MI_NOTES, MI_LOWCUT, MI_USB, MI_SE
 static const char *const MI_NAME[MI_COUNT] = {"COLOR", "ZOOM", "LIGHTS", "KEYS", "NOTES", "SPEAKER LOWCUT", "USB AUDIO",
                                               "USB SERIAL",
 #if BOARD_SMK37
-                                              "VELOCITY",
+                                              "KEY VELOCITY",
 #endif
 #if SNOOP37
                                               "BOOT LOGO",
@@ -153,7 +153,11 @@ static void draw_menu(void)
                 int cur = i == ui.menu_sel;
                 uint16_t vc;
                 const char *v = mi_value(i, &vc);
+#if BOARD_SMK37
+                char k[4] = {'K', (char)('5' + r), 0, 0};   /* (the SMK-37's K5..K8 are KNOB 1..4) */
+#else
                 char k[4] = {'K', (char)('1' + r), 0, 0};
+#endif
                 cv_rect(4, y + 2, 4, MI_DY - 8, cur ? C_WHITE : TE_COL[r & 3u]);   /* the knob's colour */
                 xv = cv_text(14, y, &FONT_S, k, TE_COL[r & 3u]);
                 cv_text(xv + 6, y, &FONT_S, MI_NAME[i], cur ? C_WHITE : C_GRAY);
@@ -173,7 +177,7 @@ static void draw_menu(void)
                     cv_text(xv + 8, y + 30, &FONT_S, "RESTART", C_AMB);   /* (usb.c: at the next start) */
             }
 #if BOARD_SMK37
-            if (MS_FIRST[sec + 1u] - MS_FIRST[sec] <= 3u)   /* (a fourth row, K4: no room for the help) */
+            if (MS_FIRST[sec + 1u] - MS_FIRST[sec] <= 3u)   /* (a fourth row, K8: no room for the help) */
 #endif
             {
                 cv_text(4, MI_Y0 + 3 * MI_DY + 6, &FONT_S, "SELECT SECTION  KNOB SETS", C_DIM);

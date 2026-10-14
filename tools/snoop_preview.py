@@ -45,29 +45,7 @@ static void str_cpy(char *d, const char *s, unsigned n)
 static const uint16_t TE_COL[4] = {RGB(40, 124, 255), RGB(30, 204, 112), RGB(255, 198, 24), RGB(255, 98, 26)};
 #include "snoop_jingle.c"
 #include "snoop_splash.c"
-#include "snoop_vis.c"
 static uint16_t strip[240 * MK_SH], pool[6720];
-/* a visualiser frame f of style v, fed with made-up music (120 BPM at 15 frames/s) */
-static uint32_t vis_feed(int v, int f)
-{
-    int16_t lvl[5], band[12];
-    int8_t note[4], tr[MKV_WP];
-    int i;
-    uint32_t t;
-    static int kick;
-    for (i = 0; i < 5; i++)
-        lvl[i] = (int16_t)(500 + 400 * sin(f * 0.4 + i));
-    for (i = 0; i < 4; i++)
-        note[i] = (int8_t)(f % (3 + i) == 0 ? (f * 5 + i * 3) % 12 : -1);
-    kick = f % 8 == 0 ? 255 : kick > 40 ? kick - 40 : 0;
-    for (i = 0; i < 12; i++)
-        band[i] = (int16_t)(450 + 350 * sin(f * 0.3 + i * 0.9) * (i < 4 ? 1.0 : 0.7));
-    for (i = 0; i < MKV_WP; i++)
-        tr[i] = (int8_t)(90 * sin(6.2832 * i * 2 / MKV_WP + f * 0.5) * (0.6 + 0.4 * sin(i * 0.7 + f * 0.3)));
-    mkv_feed(lvl, note, kick, band, tr, (uint32_t)f * 34u, &t);
-    mk_vis = (uint8_t)v;
-    return t;
-}
 int main(int argc, char **argv)
 {
     int a, y;
@@ -75,17 +53,14 @@ int main(int argc, char **argv)
         SINE[a] = (int16_t)lrint(32767.0 * sin(2 * M_PI * a / 1024));
     mk_mem(pool);
     for (a = 1; a < argc; a++) {
-        uint32_t t = (uint32_t)strtoul(argv[a] + (argv[a][0] == 'o' || argv[a][0] == 'v'), 0, 10);
+        uint32_t t = (uint32_t)strtoul(argv[a] + (argv[a][0] == 'o'), 0, 10);
         mk_ota = argv[a][0] == 'o';
-        mk_vis = 0;
-        if (argv[a][0] == 'v')           /* v<style>,<frame> */
-            t = vis_feed((int)t, atoi(strchr(argv[a], ',') + 1));
         if (mk_ota) {                    /* o<step>,<code> */
             mk_step = (uint8_t)t;
             mk_code = (int8_t)strtol(strchr(argv[a], ',') + 1, 0, 10);
             t = 4000;
         }
-        if (!mk_ota && !mk_vis) {        /* the jingle runs along: the mountains follow its bands */
+        if (!mk_ota) {        /* the jingle runs along: the mountains follow its bands */
             static uint32_t last = 0xFFFFFFFFu;
             int32_t l[32], r[32], s[32];
             if (t < last || last == 0xFFFFFFFFu)
@@ -278,7 +253,6 @@ def main():
     a = ap.parse_args()
     times = [int(v) for v in a.ms.split(",")]
     otas = ["o1,0", "o2,0", "o3,0", "o4,0", "o5,0", "o9,-14", "o9,1"]
-    vis = [f"v{v},{f}" for v in (1, 2) for f in range(40)]
     gif = [] if a.no_gif else list(range(0, 5220, 40))   # (MK_LEN)
     a.outdir.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as td:
@@ -286,7 +260,7 @@ def main():
         c.write_text(HARNESS)
         subprocess.run(["cc", "-O2", "-Wall", "-Wno-unused-function", "-I", str(SRC.parent), str(c), "-lm",
                         "-o", str(exe)], check=True)
-        raw = subprocess.run([str(exe), *map(str, times + otas + vis + gif)], check=True,
+        raw = subprocess.run([str(exe), *map(str, times + otas + gif)], check=True,
                              capture_output=True).stdout
 
     def rgb(px):
@@ -309,12 +283,8 @@ def main():
     for k, o in enumerate(otas):
         save(frame(len(times) + k), "ota_" + o[1:].replace(",", "_").replace("-", "m"))
     base = len(times) + len(otas)
-    for v, name in ((1, "snoop"), (2, "waterfall")):
-        g = [frame(base + (v - 1) * 40 + k) for k in range(40)]
-        save(g[-1], "vis_" + name)
-        g[0].save(a.outdir / f"vis_{name}.gif", save_all=True, append_images=g[1:], duration=67, loop=0)
     if gif:
-        g = [frame(base + len(vis) + k) for k in range(len(gif))]
+        g = [frame(base + k) for k in range(len(gif))]
         g[0].save(a.outdir / "intro.gif", save_all=True, append_images=g[1:], duration=40, loop=0)
         print(a.outdir / "intro.gif")
     brand(a.outdir, rgb)

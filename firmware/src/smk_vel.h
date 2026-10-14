@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * SMK-37 Pro: Copyright (C) 2026 M. Geisler (genkigenki/makkuro) */
-/* SMK-37: HOME menu > AUDIO > VELOCITY, how hard the keys and pads play. DYNAMIC: as played (the unit's factory
+/* SMK-37: HOME menu > AUDIO > KEY VELOCITY, how hard the keys and pads play. DYNAMIC: as played (the unit's factory
  * curves, smk_input.h); SOFT: a light touch plays louder; HARD: loud needs a hard hit; FIXED 64 / 100 / 127: every
  * note at that velocity, as on the FM-1 (100). Applied where seq.c reads a key's or a pad's velocity, so the notes,
  * their MIDI out and the drum levels (ghost .. hard) follow it. Kept in the settings (panel.c lights_word bits
@@ -9,7 +9,7 @@
 
 enum { VEL_DYNAMIC, VEL_SOFT, VEL_HARD, VEL_FIX64, VEL_FIX100, VEL_FIX127, VEL_N };
 static const char *const VEL_NAME[VEL_N] = {"DYNAMIC", "SOFT", "HARD", "FIXED 64", "FIXED 100", "FIXED 127"};
-static uint8_t vel_mode;                           /* menu VELOCITY (VEL_*) */
+static uint8_t vel_mode;                           /* menu KEY VELOCITY (VEL_*) */
 
 /* a played velocity (1..127; 0 = a release, kept) -> the one the note gets */
 static uint32_t vel_apply(uint32_t mode, uint32_t v)
