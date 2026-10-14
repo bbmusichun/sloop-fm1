@@ -19,7 +19,7 @@
 #include "fm1_lcd_hw.h"
 #include "felucca_tables.h"
 #ifndef SNOOP37
-#define SNOOP37 0                /* 1: the Snoop37 look: its boot splash, update screens, name and visualisers (snoop_*) */
+#define SNOOP37 0                /* 1: the Snoop37 look: its boot splash, update screens, name (snoop_*) */
 #endif
 #if SNOOP37
 #include "snoop_theme.h"         /* the SNOOP37 name on the screens */
@@ -29,10 +29,10 @@
 #define BRAND_BASED "BASED ON FELUCCA"
 #define BRAND_CRASH "FELUCCA CRASH"
 #define BRAND_RESCUE "SLOOP USB RESCUE"
+#endif
 #define VIS_STYLES 12u
 #define VIS_LAST_NAMES "SLOOP"
 #define VIS_N_STR "/12"
-#endif
 
 #include "libc.c"
 #include "lcd.c"
@@ -255,6 +255,5 @@ static void ota_commit(const uint8_t *parm)
 #include "splash.c"          /* SLOOP boot logo (build/gen/sloop_logo.h) */
 #if SNOOP37
 #include "snoop_splash.c"    /* animated SNOOP37 boot splash instead of the logo */
-#include "snoop_vis.c"       /* its visualiser styles (ui_vis.c) */
 #endif
 #include "main.c"

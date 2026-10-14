@@ -9,8 +9,3 @@
 #define BRAND_VERSION "2.6"      /* Snoop37's version, before SLOOP's on SYSTEM's about screen */
 #define BRAND_CRASH "SNOOP37 CRASH"
 #define BRAND_RESCUE "SNOOP37 USB RESCUE"
-
-#define VIS_STYLES 13u
-#define VIS_LAST_NAMES "SNOOP", "WATERFALL"
-#define VIS_N_STR "/13"
-static int mkv_draw(uint32_t s);
