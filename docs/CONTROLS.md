@@ -16,7 +16,7 @@ Kept up to date with the firmware (this repository, branch `main`).
 | KNOB 3 | dial 3 on screen (yellow) | K7 | dial 3 | cap: yellow 255,198,24 |
 | KNOB 4 | dial 4 on screen (orange) | K8 | dial 4 | cap: orange 255,98,26 |
 | — | — | FADER 1–4 | tracks 1–4 (4 = drums), by FADER BANK: A level, B filter (low-pass ◀ open ▶ high-pass), C reverb, D delay; a fader takes over once moved | master FX bank |
-| — (no wheels used by SLOOP) | — | PITCH wheel | pitch bend ±7 semitones, selected synth track | — |
+| — (no wheels used by SLOOP) | — | PITCH wheel | pitch bend, selected synth track: ±BEND RANGE (HOME menu > MIDI, K6: 1, 2, 3, 4, 5, 7, 12 semitones; default 7) | — |
 | — | — | MOD wheel | vibrato 10 Hz, up to ±1 semitone (up = more) | — |
 | — | — | PEDAL jack | — | sustain or start/stop |
 
@@ -57,5 +57,5 @@ Kept up to date with the firmware (this repository, branch `main`).
 | Combo | Does |
 |---|---|
 | OCTAVE− held at power-on | USB rescue |
-| OCTAVE− + OCTAVE+ held at power-on | hardware calibration (re-teach buttons and knobs) |
+| OCTAVE− + OCTAVE+ held at power-on | hardware calibration (re-teach buttons, knobs and the wheels) |
 | OCTAVE− + OCTAVE+ held 5 s, stopped | update mode (UBOOT) |

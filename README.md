@@ -15,7 +15,7 @@ SMK-37 share the same JieLi AC791N (WL82) chip, boot chain and update loader; on
 This branch adds the SMK-37 board support (keys, pads, faders, wheels, knobs, display, LEDs, flash map,
 installer) and the optional look (animated intro and boot jingle).
 
-> **Status: experimental. Snoop37 2.6.3, based on SLOOP 2.6** (0.1.x was tested on an SMK-37 Pro). Unofficial
+> **Status: experimental. Snoop37 2.6.4, based on SLOOP 2.6** (0.1.x was tested on an SMK-37 Pro). Unofficial
 > firmware, not affiliated with or endorsed by M-Vave. Install at your own risk and read [Safety](#safety) first.
 
 Everything SLOOP does is described in [README-SLOOP.md](README-SLOOP.md) (SLOOP's own README),
@@ -32,15 +32,16 @@ Snoop37 2.6 moves to SLOOP 2.6 (changes: [CHANGES.md](CHANGES.md); SLOOP's own l
 - **MIDI LEARN:** GLOBE + F#3, turn the SLOOP knob (K5–K8) you want, move a knob of your controller, GLOBE + F#3
   again. HOME menu (PATCH held) > SYSTEM > MIDI LEARN CLEAR forgets them.
 - **Pitch bend and sustain pedal from MIDI IN** (range: GLO > MIDI 2 > BEND, 1–12 semitones). The SMK-37's own
-  pitch wheel keeps its ±7 semitones on the selected synth track.
+  pitch wheel has its own range (HOME menu > MIDI > BEND RANGE, default ±7) on the selected synth track.
 - **A MIDI channel per track** (GLO > MIDI, in and out) and **MIDI IN on one channel** (GLO > MIDI 2 > IN).
 - An **INSERT** effect on every track, **LFO 2** with tempo sync, **ENV SYNC**, ANALOG's filter as LP / BP / HP,
   a note's **LEN** and step velocity, **TEXTURE** (a looping bed under the mix), **live drum mutes** (PARA + a
   black key), step entry from a MIDI keyboard, Program Change, SAVE > PROJECT > ERASE, a bolder screen font and a
   look-ahead master limiter.
-- SYSTEM's about screen shows `2.6.3 (SLOOP 2.6)` (2.6.1: without the repository link; the SMK-37 hardware
+- SYSTEM's about screen shows `2.6.4 (SLOOP 2.6)` (2.6.1: without the repository link; the SMK-37 hardware
   support as in the upstream pull request #112; 2.6.2: HOME menu > AUDIO > VELOCITY; 2.6.3: KEY VELOCITY, the
-  menu rows named K5–K8, the visualiser without the SNOOP and WATERFALL styles).
+  menu rows named K5–K8, the visualiser without the SNOOP and WATERFALL styles; 2.6.4: TRS MIDI OUT, BEND RANGE,
+  the wheels in the hardware calibration).
 
 **After updating from 0.1.x, check two settings once:** HOME menu > SYSTEM > **BOOT LOGO**, and GLO > MIDI 2 >
 **IN** (the MIDI channel SLOOP listens on). SLOOP 2.6 stores the MIDI IN channel in the bits where 0.1.x kept the
@@ -70,8 +71,12 @@ locks, USB audio, MIDI clock, the menus and screens), mapped onto the SMK-37's c
   the four tracks (track 4 = drums); a fader takes over once it is moved. FADER BANK opens a screen with the four
   banks and what each fader sets; pressed again, `<` `>` or K2 change the bank. It closes after 4 s or with PATCH.
   Only one bank screen is up at a time: KNOB BANK (pad picker) and FADER BANK close each other.
-- **Wheels.** Pitch wheel: pitch bend ±7 semitones on the selected synth track. Mod wheel: vibrato (10 Hz, up to
-  ±1 semitone). Both calibrate themselves.
+- **Wheels.** Pitch wheel: pitch bend on the selected synth track, HOME menu > MIDI > **BEND RANGE** (K6): ±1, 2,
+  3, 4, 5, 7 or 12 semitones (default 7). Mod wheel: vibrato (10 Hz, up to ±1 semitone). Both calibrate themselves;
+  the hardware calibration (OCTAVE− + OCTAVE+ at power-on) also teaches them, for the full range on the full travel.
+- **TRS MIDI OUT.** The 3.5 mm jack sends the same MIDI as USB (keys, pads, sequencer), with or without a computer:
+  HOME menu > MIDI > **TRS MIDI OUT** (K5), ON by default. A TRS-to-DIN adapter, type A (if a synth does not
+  respond, try type B).
 - **8 knobs as the FM-1's top row:** K1 master volume, K2 SELECT (tempo, pages), K3 track, K4 sound / kit,
   K5–K8 the four dials on the screen. One encoder step per detent.
 - **Buttons** keep SLOOP's functions (PATCH = HOME, PARA = EDIT, CHORD = ENV, NOTE REPEAT = LFO, SCALE = SEL,
@@ -86,7 +91,7 @@ locks, USB audio, MIDI clock, the menus and screens), mapped onto the SMK-37's c
   key_mac areas are never written.
 
 The full control map (FM-1 → SLOOP → SMK-37 → Snoop37) is in [docs/CONTROLS.md](docs/CONTROLS.md).
-Not used yet: the pedal jack, TRS MIDI OUT, pad pressure.
+Not used yet: the pedal jack, pad pressure.
 
 ## Branches
 

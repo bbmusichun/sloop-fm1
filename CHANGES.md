@@ -1,5 +1,20 @@
 # Changes
 
+## Snoop37 2.6.4
+
+- **TRS MIDI OUT:** the 3.5 mm jack sends what goes out over USB MIDI (the keys and pads, the sequencer with
+  GLO > SYSTEM > MIDI = SEQ, on each track's channel), with or without a computer. HOME menu > MIDI >
+  **TRS MIDI OUT** (K5): ON (default) / OFF. Use a TRS-to-DIN MIDI adapter (type A; if a synth does not respond, try
+  type B).
+- **BEND RANGE:** HOME menu > MIDI > **BEND RANGE** (K6) sets the pitch wheel's range on the internal sounds: ±1, 2,
+  3, 4, 5, 7 or 12 semitones, default **7** (the range it had). Pitch bend from MIDI IN
+  keeps its own range (GLO > MIDI 2 > BEND).
+- **Wheel calibration:** HARDWARE CALIBRATION (OCTAVE− + OCTAVE+ at power-on, or HOME menu > SYSTEM) now also
+  teaches the wheels after the buttons and knobs: the pitch wheel at rest, full down, full up; the mod wheel at the
+  bottom, full up (OCTAVE+ takes each step). The full travel then gives the full range; at power-on a resting pitch
+  wheel is re-centred. Without it the wheels calibrate themselves as before. The calibration screen names the
+  knobs as printed (K2 SELECT … K5–K8).
+
 ## Snoop37 2.6.3
 
 - HOME menu > AUDIO > VELOCITY is now **KEY VELOCITY**, and it is set with **K8** (2.6.2 said K4).
