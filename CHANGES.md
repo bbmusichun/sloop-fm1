@@ -1,5 +1,12 @@
 # Changes
 
+## Snoop37 2.6.2
+
+- HOME menu > AUDIO > **VELOCITY** (K4): DYNAMIC (as played, the default), SOFT (a light touch plays louder), HARD
+  (loud needs a hard hit), FIXED 64, FIXED 100, FIXED 127. It applies to the 37 keys and the pads: the notes, their
+  MIDI out and the drum levels (FIXED 64: soft, 100: normal, 127: hard; OCT− / OCT+ held still play ghost / hard).
+  Kept with the settings; after updating it is DYNAMIC, as before.
+
 ## Snoop37 2.6.1
 
 - About screen without the repository link (it names SLOOP's repository, as SLOOP does).

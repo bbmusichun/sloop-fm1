@@ -123,6 +123,9 @@ static uint32_t lights_word(void)
 #if SNOOP37
            | (uint32_t)(boot_logo % BOOT_N) << 26
 #endif
+#if BOARD_SMK37
+           | vel_word(vel_mode)                                /* SMK-37: menu VELOCITY, bits 28..30 (smk_vel.h) */
+#endif
         ;
 }
 static void lights_from_word(uint32_t w)
@@ -142,6 +145,9 @@ static void lights_from_word(uint32_t w)
     vis_style = (uint8_t)(((w >> 17) & 15u) % VIS_STYLES);   /* the visualiser (ui_vis.c); 0 in 2.3 = OSCILLOSCOPE */     /* menu USB SERIAL (usb.c usb_cdc_on, at the next start); 0 in 2.3 = OFF */
 #if SNOOP37
     boot_logo = (uint8_t)(((w >> 26) & 3u) % BOOT_N);
+#endif
+#if BOARD_SMK37
+    vel_mode = (uint8_t)vel_of_word(w);         /* (older data: DYNAMIC) */
 #endif
 }
 
