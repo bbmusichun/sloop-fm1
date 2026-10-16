@@ -61,7 +61,7 @@ Build options (environment, `0` or `1`; defaults in `firmware/src/felucca.c`):
 | `FELUCCA_CDC` | 1 | USB serial console |
 | `FELUCCA_UAC` | 1 | USB audio input: the master output, 44.1 kHz stereo (after Felucca 1.0) |
 | `FELUCCA_UART` | 1 (SMK-37: 0) | TRS MIDI IN (the 3.5 mm jack); must stay 0 on the SMK-37 (PH8 is a key row there) |
-| `SNOOP37` | 0 | the Snoop37 look (opt-in): its animated boot splash and jingle, update screens, name and two more visualiser styles, a SYSTEM > BOOT LOGO setting (`firmware/src/snoop_*`); the controls are the same. For `BOARD=smk37` (the FM-1 app slot has no room for it). Off, the build is plain SLOOP |
+| `SNOOP37` | 0 | the Snoop37 look (opt-in): its animated boot splash and jingle, update screens and name, a SCREEN > BOOT LOGO setting (`firmware/src/snoop_*`); the controls are the same. For `BOARD=smk37` (the FM-1 app slot has no room for it). Off, the build is plain SLOOP |
 
 Target board: `BOARD=smk37 ./build.sh` (or `./build.sh --board smk37`) builds for the M-Vave SMK-37 Pro:
 `-DBOARD_SMK37=1` for the app and the update loader, identity `SMK-37 Pro_900` (release `SMK-37 Pro_9XY`),

@@ -11,6 +11,9 @@
  * Flash access goes through three hooks (also used by the host test):
  *   st_read(off, dst, n)   st_erase(off)   st_prog(off, src, n)
  */
+#ifndef UI_SMALL                 /* (2.7) compiled for size: not the audio path (gfx.c UI_SMALL); the host tests and the loader: nothing */
+#define UI_SMALL
+#endif
 #define ST_MAGIC 0x554C4546u                   /* "FELU" */
 #define ST_SECTOR 4096u
 #define ST_PAYLOAD_OFF 256u
@@ -25,7 +28,8 @@ enum { OBJ_SETTINGS, OBJ_PROJECT0, OBJ_UPRESET0 = OBJ_PROJECT0 + 4, OBJ_AUTOSAVE
 #if BOARD_SMK37
 #define OBJ_WCAL OBJ_COUNT                     /* SMK-37: the wheels' calibration (project.c), 0xB1000 / 0xB2000 */
 #define OBJ_DAW (OBJ_COUNT + 1)                /* SMK-37: DAW mode, its settings and USER map (project.c), 0xB3000 / 0xB4000 */
-#define ST_NOBJ (OBJ_COUNT + 2)
+#define OBJ_SMKSET (OBJ_COUNT + 2)             /* SMK-37: the HOME menu's SMK-37 settings (project.c), 0xB5000 / 0xB6000 */
+#define ST_NOBJ (OBJ_COUNT + 3)
 #else
 #define ST_NOBJ OBJ_COUNT
 #endif
@@ -61,19 +65,19 @@ static uint32_t st_crc32(const void *p, uint32_t n)   /* zlib CRC-32, 4 bits per
  * A/B neighbours: projects 0x9D000..0xA4FFF, user preset banks 0xA5000..0xA8FFF, autosave 0xA9000 /
  * 0xAA000, FM6 bank 0xAB000 / 0xAC000, settings 0xAD000 / 0xAE000; the owner tag 0xAF000; 0xB0000 left alone (the
  * stock firmware's); the wheels' calibration 0xB1000 / 0xB2000 (OBJ_WCAL); DAW mode 0xB3000 / 0xB4000 (OBJ_DAW);
- * 0xB5000..0xBAFFF spare. Never near BTIF / USRTRIM
+ * the SMK-37 settings 0xB5000 / 0xB6000 (OBJ_SMKSET); 0xB7000..0xBAFFF spare. Never near BTIF / USRTRIM
  * (0xC0000..0xC1FFF) or key_mac (0xFF000). */
 #define ST_SMK_BASE 0x9D000u
 #define ST_SMK_SECTORS (2u * OBJ_COUNT)
 #define ST_OWNER_OFF (ST_SMK_BASE + ST_SMK_SECTORS * ST_SECTOR)
 _Static_assert(ST_SMK_BASE + ST_SMK_SECTORS * ST_SECTOR <= 0xBB000u, "SMK store: past FL_DATA");
-_Static_assert(ST_OWNER_OFF + 6u * ST_SECTOR <= 0xBB000u, "SMK store: the owner tag, OBJ_WCAL and OBJ_DAW past FL_DATA");
-static uint32_t st_sector(uint32_t obj, uint32_t copy)  /* flash offset of copy A (0) / B (1) */
+_Static_assert(ST_OWNER_OFF + 8u * ST_SECTOR <= 0xBB000u, "SMK store: the owner tag, OBJ_WCAL, OBJ_DAW, OBJ_SMKSET past FL_DATA");
+UI_SMALL static uint32_t st_sector(uint32_t obj, uint32_t copy)  /* flash offset of copy A (0) / B (1) */
 {
     static const uint8_t ORDER[OBJ_COUNT] = {
         [OBJ_PROJECT0] = 0, [OBJ_PROJECT0 + 1] = 1, [OBJ_PROJECT0 + 2] = 2, [OBJ_PROJECT0 + 3] = 3,
         [OBJ_UPRESET0] = 4, [OBJ_UPRESET0 + 1] = 5, [OBJ_AUTOSAVE] = 6, [OBJ_FM6BANK] = 7, [OBJ_SETTINGS] = 8};
-    if (obj == OBJ_WCAL || obj == OBJ_DAW)
+    if (obj == OBJ_WCAL || obj == OBJ_DAW || obj == OBJ_SMKSET)
         return ST_OWNER_OFF + (2u + 2u * (obj - OBJ_WCAL) + (copy & 1u)) * ST_SECTOR;
     return ST_SMK_BASE + (ORDER[obj % OBJ_COUNT] * 2u + (copy & 1u)) * ST_SECTOR;
 }
@@ -92,7 +96,7 @@ static uint32_t st_sector(uint32_t obj, uint32_t copy)  /* flash offset of copy 
 #define FELUCCA_DATA_UNTAGGED_OK 1
 #endif
 static uint8_t st_owner_cleared;                /* (the UI may say so) */
-static void st_owner_check(void)
+UI_SMALL static void st_owner_check(void)
 {
     static const char FAM[] = FELUCCA_DATA_FAMILY;
     uint8_t tag[16], want[16];
@@ -114,6 +118,8 @@ static void st_owner_check(void)
         st_erase(st_sector(OBJ_WCAL, 1));
         st_erase(st_sector(OBJ_DAW, 0));
         st_erase(st_sector(OBJ_DAW, 1));
+        st_erase(st_sector(OBJ_SMKSET, 0));
+        st_erase(st_sector(OBJ_SMKSET, 1));
         st_owner_cleared = 1;
     }
     st_erase(ST_OWNER_OFF);
@@ -177,7 +183,7 @@ static void st_stock_boot(void)                 /* the marker over data that is 
 }
 #else
 static void st_owner_check(void) {}
-static uint32_t st_sector(uint32_t obj, uint32_t copy)  /* flash offset of copy A (0) / B (1) */
+UI_SMALL static uint32_t st_sector(uint32_t obj, uint32_t copy)  /* flash offset of copy A (0) / B (1) */
 {
     if (obj == OBJ_SETTINGS)
         return 0xFC000u + copy * ST_SECTOR;
@@ -191,9 +197,11 @@ static uint32_t st_sector(uint32_t obj, uint32_t copy)  /* flash offset of copy 
 }
 #endif
 
-static uint8_t st_buf[ST_PAYLOAD_MAX] __attribute__((aligned(4)));
+#include "scratch.h"                          /* sloop-lab: the payload buffer is the main loop's shared scratch */
+#define st_buf (main_scratch.st)
+_Static_assert(sizeof main_scratch.st == ST_PAYLOAD_MAX, "the scratch holds a payload");
 
-static int st_head(uint32_t obj, uint32_t copy, st_hdr_t *h)   /* commit record valid: 0 */
+UI_SMALL static int st_head(uint32_t obj, uint32_t copy, st_hdr_t *h)   /* commit record valid: 0 */
 {
     if (obj >= ST_NOBJ || copy > 1u)
         return -1;
@@ -206,7 +214,7 @@ static int st_head(uint32_t obj, uint32_t copy, st_hdr_t *h)   /* commit record 
     return 0;
 }
 
-static int st_body(uint32_t obj, uint32_t copy, const st_hdr_t *h)   /* payload -> st_buf, CRC ok: 0 */
+UI_SMALL static int st_body(uint32_t obj, uint32_t copy, const st_hdr_t *h)   /* payload -> st_buf, CRC ok: 0 */
 {
     if (st_read(st_sector(obj, copy) + ST_PAYLOAD_OFF, st_buf, h->len) || st_crc32(st_buf, h->len) != h->crc)
         return -1;
@@ -216,7 +224,7 @@ static int st_body(uint32_t obj, uint32_t copy, const st_hdr_t *h)   /* payload 
 /* the current copy: the valid one with the highest seq (A on a tie), -1 when
  * neither is valid. Headers first, so only the winner's payload is read (it
  * is left in st_buf); *h gets its header. */
-static int st_current(uint32_t obj, st_hdr_t *h)
+UI_SMALL static int st_current(uint32_t obj, st_hdr_t *h)
 {
     st_hdr_t a, b;
     int va = st_head(obj, 0, &a) == 0, vb = st_head(obj, 1, &b) == 0;
@@ -238,8 +246,32 @@ static int st_current(uint32_t obj, st_hdr_t *h)
     return -1;
 }
 
+#ifdef ST_XIP_PTR                                  /* sloop-lab: the firmware (felucca.c); the host tests have no XIP */
+/* the current copy's payload where it is, in the flash's plain XIP window (fm1_flash.h fl_plain_window_init; the
+ * driver drops the cache lines it erases and programs, so a save is seen at once): its CRC is checked through the
+ * window, nothing is copied. 0 = no valid copy, else *len = the payload's length. The copy is the one st_current
+ * would take: the valid header with the highest seq, A on a tie, the other when its payload fails. */
+UI_SMALL static const void *st_xip(uint32_t obj, uint32_t *len)
+{
+    st_hdr_t h[2];
+    int v[2], i, first;
+    v[0] = st_head(obj, 0, &h[0]) == 0;
+    v[1] = st_head(obj, 1, &h[1]) == 0;
+    first = v[1] && (!v[0] || h[1].seq > h[0].seq) ? 1 : 0;
+    for (i = 0; i < 2; i++) {
+        uint32_t c = (uint32_t)(first ^ i);
+        const uint8_t *p = ST_XIP_PTR(st_sector(obj, c) + ST_PAYLOAD_OFF);
+        if (v[c] && st_crc32(p, h[c].len) == h[c].crc) {
+            *len = h[c].len;
+            return p;
+        }
+    }
+    return 0;
+}
+#endif
+
 /* load object into dst (up to max bytes); returns the length, or -1 */
-static int st_load(uint32_t obj, void *dst, uint32_t max)
+UI_SMALL static int st_load(uint32_t obj, void *dst, uint32_t max)
 {
     uint32_t i;
     st_hdr_t h;
@@ -252,9 +284,29 @@ static int st_load(uint32_t obj, void *dst, uint32_t max)
     return (int)h.len;
 }
 
+/* SLOOP 2.7: a side record in a copy's own sector, between the header (0..31) and the payload (256..): bytes
+ * ST_SIDE_OFF.. carry what an older SLOOP must never see in the payload (it checks the payload's exact length:
+ * the settings object's would no longer be one it reads). st_save3 programs st_side there with the payload,
+ * before the header, so it is committed with its copy; an older save leaves the area erased (0xFF), and the record
+ * goes with that copy. The record checks itself (project.c: a magic and a CRC): st_side_load reads the bytes. */
+#define ST_SIDE_OFF 64u
+#define ST_SIDE_MAX (ST_PAYLOAD_OFF - ST_SIDE_OFF)
+static const void *st_side;                         /* the next save's side record (0: none), for one save */
+static uint32_t st_side_len;
+_Static_assert(sizeof(st_hdr_t) <= ST_SIDE_OFF, "the side record starts after the header");
+/* the current copy's side bytes (n <= ST_SIDE_MAX) into dst: 0, or -1 (no valid copy) */
+UI_SMALL static int st_side_load(uint32_t obj, void *dst, uint32_t n)
+{
+    st_hdr_t h;
+    int c = st_current(obj, &h);
+    if (c < 0 || n > ST_SIDE_MAX)
+        return -1;
+    return st_read(st_sector(obj, (uint32_t)c) + ST_SIDE_OFF, dst, n) ? -1 : 0;
+}
+
 /* an object in up to three parts, src then src2 then src3 (SLOOP 2.5: the settings and the SYN kits after them;
  * 2.6: then the MIDI LEARN map) */
-static int st_save3(uint32_t obj, const void *src, uint32_t len, const void *src2, uint32_t len2, const void *src3,
+UI_SMALL static int st_save3(uint32_t obj, const void *src, uint32_t len, const void *src2, uint32_t len2, const void *src3,
                     uint32_t len3)
 {
     uint32_t seq, base, off;
@@ -280,6 +332,13 @@ static int st_save3(uint32_t obj, const void *src, uint32_t len, const void *src
         if ((rc = st_prog(base + ST_PAYLOAD_OFF + off, st_buf + off, n)) != 0)
             return rc;
     }
+    if (st_side && st_side_len && st_side_len <= ST_SIDE_MAX) {   /* (2.7) the side record, before the commit */
+        uint8_t sb[ST_SIDE_MAX];
+        for (off = 0; off < st_side_len; off++)
+            sb[off] = ((const uint8_t *)st_side)[off];      /* (RAM source) */
+        if ((rc = st_prog(base + ST_SIDE_OFF, sb, st_side_len)) != 0)
+            return rc;
+    }
     h.magic = ST_MAGIC;
     h.type = (uint16_t)obj;
     h.slot = (uint16_t)(cur == 0 ? 1 : 0);
@@ -298,8 +357,8 @@ static int st_save3(uint32_t obj, const void *src, uint32_t len, const void *src
     }
     return 0;
 }
-static int st_save2(uint32_t obj, const void *src, uint32_t len, const void *src2, uint32_t len2)
+UI_SMALL static int st_save2(uint32_t obj, const void *src, uint32_t len, const void *src2, uint32_t len2)
 {
     return st_save3(obj, src, len, src2, len2, 0, 0);
 }
-static int st_save(uint32_t obj, const void *src, uint32_t len) { return st_save2(obj, src, len, 0, 0); }
+UI_SMALL static int st_save(uint32_t obj, const void *src, uint32_t len) { return st_save2(obj, src, len, 0, 0); }

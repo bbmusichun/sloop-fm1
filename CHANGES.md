@@ -1,5 +1,15 @@
 # Changes
 
+## Snoop37 2.7.0
+
+- **SLOOP 2.7:** the sound on both of the chip's cores (HOME menu > SYSTEM > 2ND CORE), the supplies at M-Vave's own
+  levels for two cores, fifteen arp modes, KBD HOLD, drum TUNE / DECAY, favourite sounds, looping samples, QUANT off,
+  GLO > MIDI 3, CC 74 per engine, KNOB ACCEL, USB RATE, your own screen colours, the editor's LIVE page
+  ([README-SLOOP.md](README-SLOOP.md#whats-new-in-27)).
+- The SMK-37 settings (KEY VELOCITY, TRS MIDI OUT, BEND UP / DOWN, LIMITER, KNOB LAYOUT, BOOT LOGO) in an object of
+  their own (SLOOP 2.7 uses the bits they were kept in); 2.6.x values are read once from the old places.
+- HOME menu: KNOB ACCEL on PLAY (K8), USB RATE on AUDIO.
+
 ## Snoop37 2.6.6
 
 - **DAW mode:** the keyboard as a MIDI controller (USB, and the TRS jack). **`<` + `>`** together (or HOME menu > MIDI >

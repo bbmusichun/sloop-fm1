@@ -49,7 +49,7 @@ int main(void)
     for (m = 0, ok = 1; m < VEL_N; m++)
         ok &= vel_of_word(vel_word(m) | 0x0FFFFFFFu) == m && (vel_word(m) & 0x8FFFFFFFu) == 0u;
     check(ok, "each mode round trips in bits 28..30, the other settings untouched");
-    check(vel_of_word(0x0C3FFFFFu) == VEL_DYNAMIC, "older data (Snoop37 2.6.1, SLOOP: bits 28..30 clear): DYNAMIC");
+    check(vel_of_word(0x0C3FFFFFu) == VEL_DYNAMIC, "older data (Snoop37 2.6, SLOOP: bits 28..30 clear): DYNAMIC");
     check(vel_of_word(6u << 28) == VEL_DYNAMIC && vel_of_word(7u << 28) == VEL_DYNAMIC, "a value out of range: DYNAMIC");
 
     printf("smk_vel: %s\n", fails ? "FAIL" : "ok");

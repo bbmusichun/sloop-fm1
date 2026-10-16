@@ -8,18 +8,36 @@ look. The SMK-37 support is offered upstream: [#112](https://github.com/isod89/s
 <img src="docs/img/intro.webp" width="360" alt="The Snoop37 intro on the SMK-37 display">
 
 Snoop37 turns the SMK-37 MIDI keyboard into a stand-alone four-track groovebox: three synth tracks and a
-drum machine, synthesised, played and sequenced on the keyboard's own chip. It is a port of [SLOOP](https://github.com/isod89/sloop-fm1) 2.6 by **isod89**, the
+drum machine, synthesised, played and sequenced on the keyboard's own chip. It is a port of [SLOOP](https://github.com/isod89/sloop-fm1) 2.7 by **isod89**, the
 live groovebox firmware for the M-Vave FM-1, which in turn is based on
 [Felucca](https://github.com/hugelton/Felucca) by **Leo Kuroshita / Hügelton Instruments**. The FM-1 and the
 SMK-37 share the same JieLi AC791N (WL82) chip, boot chain and update loader; only the panel wiring differs.
 This branch adds the SMK-37 board support (keys, pads, faders, wheels, knobs, display, LEDs, flash map,
 installer) and the optional look (animated intro and boot jingle).
 
-> **Status: experimental. Snoop37 2.6.6, based on SLOOP 2.6** (0.1.x was tested on an SMK-37 Pro). Unofficial
+> **Status: experimental. Snoop37 2.7.0, based on SLOOP 2.7** (0.1.x was tested on an SMK-37 Pro). Unofficial
 > firmware, not affiliated with or endorsed by M-Vave. Install at your own risk and read [Safety](#safety) first.
 
 Everything SLOOP does is described in [README-SLOOP.md](README-SLOOP.md) (SLOOP's own README),
 [GUIDE.md](GUIDE.md) and [SLOOP.md](SLOOP.md).
+
+## What's new in 2.7
+
+Snoop37 2.7.0 moves to SLOOP 2.7 (SLOOP's own list: [README-SLOOP.md](README-SLOOP.md#whats-new-in-27)). On the
+SMK-37 that brings:
+
+- **Two cores:** the sound runs on both of the chip's cores, so many voices and INSERT effects no longer crackle
+  (HOME menu > SYSTEM > 2ND CORE, on by default). The supplies are set at M-Vave's own levels for two cores.
+- **Fifteen arp modes**, **KBD HOLD**, **drum TUNE / DECAY** (DRUMS screen, SOUND page), **favourite sounds**,
+  **looping samples**, **QUANT off** on the REC screen, overdub over held notes, **GLO > MIDI 3** (FX CH, DR MAP,
+  REMOTE, CLOCK OUT), CC 74 per engine, KNOB ACCEL and LEVEL / PAN glide, USB RATE, your own screen colours (the
+  editor's Theme page) and the editor's LIVE page.
+- The SMK-37 settings (KEY VELOCITY, TRS MIDI OUT, BEND UP / DOWN, LIMITER, KNOB LAYOUT, BOOT LOGO) are kept in an
+  object of their own now, since SLOOP 2.7 uses the room they had; the values of 2.6.x are taken over at the first
+  start. The HOME menu: SCREEN (COLOR, ZOOM, KNOB LAYOUT, BOOT LOGO), LIGHTS, AUDIO (SPEAKER LOWCUT, USB AUDIO,
+  USB RATE, LIMITER), PLAY (KEY VELOCITY, BEND UP, BEND DOWN, KNOB ACCEL), MIDI, DAW, SYSTEM (2ND CORE, HARDWARE
+  CALIBRATION, MIDI LEARN CLEAR, ABOUT).
+- SYSTEM's about screen shows `2.7.0 (SLOOP 2.7)`. Projects, presets, samples and kits of 2.6 load as they are.
 
 ## What's new in 2.6
 
@@ -53,7 +71,7 @@ they stay. Projects, presets, samples and kits are kept; a project saved in 2.6 
 
 ![Snoop37 screens: the tracks, the visualiser, the Snoop visualiser, the system menu](docs/img/screens.png)
 
-Everything of SLOOP 2.6 (four tracks, the synthesis engines and sounds, drum kits, samples, song mode, parameter
+Everything of SLOOP 2.7 (four tracks, the synthesis engines and sounds, drum kits, samples, song mode, parameter
 locks, USB audio, MIDI clock, the menus and screens), mapped onto the SMK-37's controls:
 
 - **37 velocity keys.** The middle 27 keys (F3–G5) are the FM-1's note keys (notes, steps, menus), now with
@@ -107,7 +125,7 @@ Not used yet: the pedal jack, pad pressure.
 
 | Branch | What |
 | --- | --- |
-| `snoop37` | Snoop37: SLOOP 2.6 + the SMK-37 support + the optional look (`SNOOP37=1`) |
+| `snoop37` | Snoop37: SLOOP 2.7 + the SMK-37 support + the optional look (`SNOOP37=1`) |
 | `smk37` | the SMK-37 support offered to SLOOP ([#112](https://github.com/isod89/sloop-fm1/pull/112)) |
 | `smk37-snoop-look` | the look as an opt-in build flag, on top of `smk37` |
 | `main` | SLOOP as upstream |
@@ -131,13 +149,13 @@ BOARD=smk37 SNOOP37=1 sh build.sh
 # the plain SMK-37 port, without the intro and jingle
 BOARD=smk37 sh build.sh
 
-# without BOARD: SLOOP for the FM-1 (build/felucca.fwsc), byte-identical to upstream SLOOP 2.6
+# without BOARD: SLOOP for the FM-1 (build/felucca.fwsc), byte-identical to upstream SLOOP 2.7
 sh build.sh
 ```
 
 `JIELI_TOOLCHAIN` and `AC79_SDK` override the default locations. The host tests run after an FM-1 build:
 `sh build.sh && sh tests/run_tests.sh` (they include the SMK-37 flash-map, package, loader and installer
-tests). One check, the static cost budget of `fm1_alnk0_irq`, fails the same way on unmodified SLOOP 2.6
+tests). One check, the static cost budget of `fm1_alnk0_irq`, fails the same way on unmodified SLOOP 2.7
 (a stale budget file upstream).
 
 ## Install
