@@ -747,7 +747,8 @@ static void daw_save(void)
 #define SMKSET_MAGIC 0x54534B53u                   /* "SKST" */
 typedef struct {
     uint32_t magic;
-    uint8_t vel, trs, bup, bdn, lim, klay, rsv[2];   /* bup / bdn: smk_wheel.h bend_*_byte */
+    uint8_t vel, trs, bup, bdn, lim, klay, boot, rsv;   /* bup / bdn: smk_wheel.h bend_*_byte; boot: SNOOP37's BOOT LOGO
+                                                         * (0 in a build without it: the default) */
 } smkset_t;
 static smkset_t smkset_saved;
 static uint8_t smkset_old_ml[3], smkset_old_have;  /* the MIDI part's last three bytes as read (midi_part_read) */
@@ -761,6 +762,9 @@ static void smkset_fill(smkset_t *s)
     s->bdn = (uint8_t)bend_dn_byte(bend_dn, bend_up);
     s->lim = (uint8_t)(lim_classic != 0u);
     s->klay = (uint8_t)(knob_layout != 0u);
+#if SNOOP37
+    s->boot = (uint8_t)(boot_logo % BOOT_N);
+#endif
 }
 static void smkset_boot(void)                      /* after the settings (persist_boot, dsu_boot) */
 {
@@ -773,6 +777,9 @@ static void smkset_boot(void)                      /* after the settings (persis
         lim_classic = (uint8_t)(s.lim & 1u);
         knob_layout = (uint8_t)(s.klay & 1u);
         knob_layout_apply();
+#if SNOOP37
+        boot_logo = (uint8_t)(s.boot < BOOT_N ? s.boot : 0u);
+#endif
         smkset_fill(&smkset_saved);
         return;
     }
@@ -781,6 +788,9 @@ static void smkset_boot(void)                      /* after the settings (persis
         uint32_t w = persist_saved.lights;
         vel_mode = (uint8_t)vel_of_word(w);        /* bits 28..30 (older data: DYNAMIC) */
         trs_out = (uint8_t)!(w >> 31);             /* bit 31, 1 = OFF (older data: ON) */
+#if SNOOP37
+        boot_logo = (uint8_t)(((w >> 26) & 3u) % BOOT_N);   /* bits 26..27 (older data: SNOOP37) */
+#endif
     }
     if (smkset_old_have) {
         bend_up = (uint8_t)bend_up_of_byte(smkset_old_ml[0]);             /* (0: the default) */
