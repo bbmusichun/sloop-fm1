@@ -9,6 +9,7 @@
 - The SMK-37 settings (KEY VELOCITY, TRS MIDI OUT, BEND UP / DOWN, LIMITER, KNOB LAYOUT, BOOT LOGO) in an object of
   their own (SLOOP 2.7 uses the bits they were kept in); 2.6.x values are read once from the old places.
 - HOME menu: KNOB ACCEL on PLAY (K8), USB RATE on AUDIO.
+- The volume knob (K1, or K5 with KNOB LAYOUT = SMK) shows MASTER and its level in the top bar while it turns (#1).
 
 ## Snoop37 2.6.6
 
