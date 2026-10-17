@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/img/banner.png" width="100%" alt="Snoop37: SLOOP by isod89 on the SMK-37, the Snoop37 intro screen"></p>
+
 # Snoop37
 
 Snoop37 — [SLOOP](https://github.com/isod89/sloop-fm1) by **isod89** for the M-Vave SMK-37, with an optional
