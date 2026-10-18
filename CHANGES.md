@@ -1,5 +1,10 @@
 # Changes
 
+## Snoop37 2.7.1
+
+- **SLOOP 2.7.1:** a late second core is held with the bus-invalid traps off (after Felucca 1.6.1): no FELUCCA CRASH
+  screen and restart, the sound goes on on one core; the crash screen shows the stack and the second core's state, 10 s.
+
 ## Snoop37 2.7.0
 
 - **SLOOP 2.7:** the sound on both of the chip's cores (HOME menu > SYSTEM > 2ND CORE), the supplies at M-Vave's own

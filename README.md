@@ -10,20 +10,24 @@ look. The SMK-37 support is offered upstream: [#112](https://github.com/isod89/s
 <img src="docs/img/intro.webp" width="360" alt="The Snoop37 intro on the SMK-37 display">
 
 Snoop37 turns the SMK-37 MIDI keyboard into a stand-alone four-track groovebox: three synth tracks and a
-drum machine, synthesised, played and sequenced on the keyboard's own chip. It is a port of [SLOOP](https://github.com/isod89/sloop-fm1) 2.7 by **isod89**, the
+drum machine, synthesised, played and sequenced on the keyboard's own chip. It is a port of [SLOOP](https://github.com/isod89/sloop-fm1) 2.7.1 by **isod89**, the
 live groovebox firmware for the M-Vave FM-1, which in turn is based on
 [Felucca](https://github.com/hugelton/Felucca) by **Leo Kuroshita / Hügelton Instruments**. The FM-1 and the
 SMK-37 share the same JieLi AC791N (WL82) chip, boot chain and update loader; only the panel wiring differs.
 This branch adds the SMK-37 board support (keys, pads, faders, wheels, knobs, display, LEDs, flash map,
 installer) and the optional look (animated intro and boot jingle).
 
-> **Status: experimental. Snoop37 2.7.0, based on SLOOP 2.7** (0.1.x was tested on an SMK-37 Pro). Unofficial
+> **Status: experimental. Snoop37 2.7.1, based on SLOOP 2.7.1** (0.1.x was tested on an SMK-37 Pro). Unofficial
 > firmware, not affiliated with or endorsed by M-Vave. Install at your own risk and read [Safety](#safety) first.
 
 Everything SLOOP does is described in [README-SLOOP.md](README-SLOOP.md) (SLOOP's own README),
 [GUIDE.md](GUIDE.md) and [SLOOP.md](SLOOP.md).
 
 ## What's new in 2.7
+
+**2.7.1** takes SLOOP 2.7.1's fix: a second core that runs late is now held the safe way (after Felucca
+1.6.1), so the music goes on, on one core, instead of a FELUCCA CRASH screen and a restart. A crash screen, if one
+ever appears, also shows the stack and the second core's state and stays 10 s.
 
 Snoop37 2.7.0 moves to SLOOP 2.7 (SLOOP's own list: [README-SLOOP.md](README-SLOOP.md#whats-new-in-27)). On the
 SMK-37 that brings:
@@ -39,7 +43,7 @@ SMK-37 that brings:
   start. The HOME menu: SCREEN (COLOR, ZOOM, KNOB LAYOUT, BOOT LOGO), LIGHTS, AUDIO (SPEAKER LOWCUT, USB AUDIO,
   USB RATE, LIMITER), PLAY (KEY VELOCITY, BEND UP, BEND DOWN, KNOB ACCEL), MIDI, DAW, SYSTEM (2ND CORE, HARDWARE
   CALIBRATION, MIDI LEARN CLEAR, ABOUT).
-- SYSTEM's about screen shows `2.7.0 (SLOOP 2.7)`. Projects, presets, samples and kits of 2.6 load as they are.
+- SYSTEM's about screen shows `2.7.1 (SLOOP 2.7.1)`. Projects, presets, samples and kits of 2.6 load as they are.
 
 ## What's new in 2.6
 
