@@ -1,5 +1,11 @@
 # Changes
 
+## Snoop37 2.7.2
+
+- **PAD LIGHT** (HOME menu > LIGHTS, K8): the pads at 100 % (default, as before), 75 %, 50 % or 25 %. The bright
+  states follow the setting, the dim ones keep most of their light, so a dim pad never goes dark and dim and lit stay
+  apart at every setting. Kept with the SMK-37 settings; data of earlier builds reads as 100 %.
+
 ## Snoop37 2.7.1
 
 - **SLOOP 2.7.1:** a late second core is held with the bus-invalid traps off (after Felucca 1.6.1): no FELUCCA CRASH

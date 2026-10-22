@@ -17,13 +17,17 @@ SMK-37 share the same JieLi AC791N (WL82) chip, boot chain and update loader; on
 This branch adds the SMK-37 board support (keys, pads, faders, wheels, knobs, display, LEDs, flash map,
 installer) and the optional look (animated intro and boot jingle).
 
-> **Status: experimental. Snoop37 2.7.1, based on SLOOP 2.7.1** (0.1.x was tested on an SMK-37 Pro). Unofficial
+> **Status: experimental. Snoop37 2.7.2, based on SLOOP 2.7.1** (0.1.x was tested on an SMK-37 Pro). Unofficial
 > firmware, not affiliated with or endorsed by M-Vave. Install at your own risk and read [Safety](#safety) first.
 
 Everything SLOOP does is described in [README-SLOOP.md](README-SLOOP.md) (SLOOP's own README),
 [GUIDE.md](GUIDE.md) and [SLOOP.md](SLOOP.md).
 
 ## What's new in 2.7
+
+**2.7.2** adds **PAD LIGHT** (HOME menu > LIGHTS, K8): the pads at 100 % (default, as before), 75 %, 50 % or 25 %.
+The bright states follow it and the dim ones keep most of their light, so at 25 % an empty step or an idle pad is
+still plain to see and still apart from a lit one.
 
 **2.7.1** takes SLOOP 2.7.1's fix: a second core that runs late is now held the safe way (after Felucca
 1.6.1), so the music goes on, on one core, instead of a FELUCCA CRASH screen and a restart. A crash screen, if one
@@ -40,10 +44,10 @@ SMK-37 that brings:
   editor's Theme page) and the editor's LIVE page.
 - The SMK-37 settings (KEY VELOCITY, TRS MIDI OUT, BEND UP / DOWN, LIMITER, KNOB LAYOUT, BOOT LOGO) are kept in an
   object of their own now, since SLOOP 2.7 uses the room they had; the values of 2.6.x are taken over at the first
-  start. The HOME menu: SCREEN (COLOR, ZOOM, KNOB LAYOUT, BOOT LOGO), LIGHTS, AUDIO (SPEAKER LOWCUT, USB AUDIO,
+  start. The HOME menu: SCREEN (COLOR, ZOOM, KNOB LAYOUT, BOOT LOGO), LIGHTS (LIGHTS, KEYS, NOTES, PAD LIGHT), AUDIO (SPEAKER LOWCUT, USB AUDIO,
   USB RATE, LIMITER), PLAY (KEY VELOCITY, BEND UP, BEND DOWN, KNOB ACCEL), MIDI, DAW, SYSTEM (2ND CORE, HARDWARE
   CALIBRATION, MIDI LEARN CLEAR, ABOUT).
-- SYSTEM's about screen shows `2.7.1 (SLOOP 2.7.1)`. Projects, presets, samples and kits of 2.6 load as they are.
+- SYSTEM's about screen shows `2.7.2 (SLOOP 2.7.1)`. Projects, presets, samples and kits of 2.6 load as they are.
 
 ## What's new in 2.6
 
