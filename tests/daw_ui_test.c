@@ -245,6 +245,23 @@ int main(int argc, char **argv)
         mi_set(MI_DRESET, 0);
         check(daw_user_changed() == 0 && !strcmp(mi_value(MI_DRESET, &c), "NONE CHANGED"), "OCT+ again: the USER map is the DEFAULT");
     }
+    {   /* LIGHTS > PAD LIGHT (2.7.2): the fourth row, 100 % first; right brighter, left dimmer, stops at the ends */
+        uint16_t c;
+        check(MS_FIRST[MS_LIGHTS] == MI_LIGHTS && MI_PADL == MI_NOTES + 1 && MS_FIRST[MS_AUDIO] == MI_PADL + 1 &&
+              !strcmp(MI_NAME[MI_PADL], "PAD LIGHT") && pad_light == PADL_100 && !strcmp(mi_value(MI_PADL, &c), "100 %"),
+              "LIGHTS: LIGHTS, KEYS, NOTES, PAD LIGHT (100 %)");
+        mi_set(MI_PADL, 1);
+        check(pad_light == PADL_100, "PAD LIGHT: right at 100 % stays");
+        mi_set(MI_PADL, -1); mi_set(MI_PADL, -1);
+        check(pad_light == PADL_50 && !strcmp(mi_value(MI_PADL, &c), "50 %"), "PAD LIGHT: left twice 50 %");
+        for (i = 0; i < 6u; i++) mi_set(MI_PADL, -1);
+        check(pad_light == PADL_25, "PAD LIGHT: stops at 25 %");
+        mi_set(MI_PADL, 0);
+        check(pad_light == PADL_100, "PAD LIGHT: OCT+ round to 100 %");
+        mi_set(MI_PADL, -1);
+        ui.menu_sel = MI_PADL; shot("smk-menu-lights");
+        pad_light = PADL_100;
+    }
     ui.menu_sel = MS_FIRST[MS_DAW]; shot("daw-menu-daw");
     ui.menu_sel = MS_FIRST[MS_PLAY]; shot("daw-menu-play");
     knob_layout = 1;

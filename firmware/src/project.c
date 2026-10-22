@@ -795,15 +795,16 @@ static void daw_save(void)
     if (memcmp(&d, &daw_saved, sizeof d) && st_save(OBJ_DAW, &d, sizeof d) == 0)
         daw_saved = d;
 }
-/* SMK-37: the HOME menu's own settings (KEY VELOCITY, TRS MIDI OUT, BEND UP / DOWN, LIMITER, KNOB LAYOUT) in an object
+/* SMK-37: the HOME menu's own settings (KEY VELOCITY, TRS MIDI OUT, BEND UP / DOWN, LIMITER, KNOB LAYOUT, PAD LIGHT) in an object
  * of their own (storage.c OBJ_SMKSET), so SLOOP's settings word and MIDI part stay SLOOP's. Earlier SMK-37 builds kept
  * them in spare bits of those (the settings word's bits 28..31, the MIDI part's last three bytes): with no object yet,
  * they are read from there once (smkset_boot) and written here from the next save on */
 #define SMKSET_MAGIC 0x54534B53u                   /* "SKST" */
 typedef struct {
     uint32_t magic;
-    uint8_t vel, trs, bup, bdn, lim, klay, boot, rsv;   /* bup / bdn: smk_wheel.h bend_*_byte; boot: SNOOP37's BOOT LOGO
-                                                         * (0 in a build without it: the default) */
+    uint8_t vel, trs, bup, bdn, lim, klay, boot, padl;  /* bup / bdn: smk_wheel.h bend_*_byte; boot: SNOOP37's BOOT LOGO
+                                                         * (0 in a build without it: the default); padl: PAD LIGHT
+                                                         * (2.7.2; 0 = 100 %, also in data of earlier builds) */
 } smkset_t;
 static smkset_t smkset_saved;
 static uint8_t smkset_old_ml[3], smkset_old_have;  /* the MIDI part's last three bytes as read (midi_part_read) */
@@ -817,6 +818,7 @@ static void smkset_fill(smkset_t *s)
     s->bdn = (uint8_t)bend_dn_byte(bend_dn, bend_up);
     s->lim = (uint8_t)(lim_classic != 0u);
     s->klay = (uint8_t)(knob_layout != 0u);
+    s->padl = (uint8_t)(pad_light % PADL_N);
 #if SNOOP37
     s->boot = (uint8_t)(boot_logo % BOOT_N);
 #endif
@@ -832,6 +834,7 @@ static void smkset_boot(void)                      /* after the settings (persis
         lim_classic = (uint8_t)(s.lim & 1u);
         knob_layout = (uint8_t)(s.klay & 1u);
         knob_layout_apply();
+        pad_light = (uint8_t)(s.padl < PADL_N ? s.padl : PADL_100);
 #if SNOOP37
         boot_logo = (uint8_t)(s.boot < BOOT_N ? s.boot : 0u);
 #endif

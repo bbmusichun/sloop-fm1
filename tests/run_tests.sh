@@ -88,6 +88,14 @@ vel_applied() {
     echo applied
 }
 run "SMK-37 menu KEY VELOCITY: applied wherever the app reads a key or pad velocity" vel_applied
+$CC -w -Ifirmware/src -o "$OUT/smk_padlight_test" tests/smk_padlight_test.c
+run "SMK-37 menu PAD LIGHT: 100 % as before; every step: dim states visible, levels apart, hue kept" "$OUT/smk_padlight_test"
+# every pad colour goes out through PAD LIGHT (lcd.c padled_set: the only writer of padled_rgb besides the flush)
+padl_applied() {
+    sed -n '/^static void padled_set(/,/^}/p' firmware/src/lcd.c | grep -q 'padl_apply(pad_light, &r, &g, &b);' &&
+    [ "$(grep -c 'padled_rgb\[[a-z]*\] =' firmware/src/lcd.c)" = 1 ] && echo applied
+}
+run "SMK-37 menu PAD LIGHT: applied to every pad colour" padl_applied
 $CC -o "$OUT/smk_wheel_test" tests/smk_wheel_test.c
 run "SMK-37 wheels: BEND UP / DOWN, the calibration (full travel = full range, re-centre), back to 0 at rest" "$OUT/smk_wheel_test"
 $CC -O2 -w -DSMK_MIX=1 -Ibuild/gen -Ifirmware/src -o "$OUT/smk_mix_test" tests/smk_mix_test.c -lm

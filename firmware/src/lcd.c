@@ -201,7 +201,9 @@ static const uint8_t PADLED_SLOT[PADLED_N] = {0, 15, 14, 13, 12, 11, 10, 9, 1, 2
 
 static void padled_set(uint32_t pad, uint8_t r, uint8_t g, uint8_t b)
 {
-    uint32_t c = (uint32_t)g << 16 | (uint32_t)r << 8 | b;
+    uint32_t c;
+    padl_apply(pad_light, &r, &g, &b);              /* (menu PAD LIGHT, smk_padlight.h) */
+    c = (uint32_t)g << 16 | (uint32_t)r << 8 | b;
     if (pad < PADLED_N && padled_rgb[pad] != c) {
         padled_rgb[pad] = c;
         padled_dirty = 1;

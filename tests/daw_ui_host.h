@@ -3,6 +3,7 @@
  * (ui_pages_test.c includes this before ui_menu.c): the SMK headers, and the DAW part of seq.c (the audio context's:
  * keys, pads) as plain variables. */
 #include "smk_vel.h"
+#include "smk_padlight.h"
 #include "smk_wheel.h"
 #define SMO_TX_DONE() 1
 #define SMO_TX_PUT(b) (void)(b)

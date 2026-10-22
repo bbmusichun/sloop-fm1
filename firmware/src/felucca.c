@@ -36,6 +36,9 @@
 #define VIS_N_STR "/12"
 
 #include "libc.c"
+#if BOARD_SMK37
+#include "smk_padlight.h"     /* SMK-37: menu PAD LIGHT, every pad colour through it (lcd.c padled_set) */
+#endif
 #include "lcd.c"
 #include "gfx.c"
 #include "core.h"

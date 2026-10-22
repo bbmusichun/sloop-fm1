@@ -124,6 +124,7 @@ the screen names them), OCT+ steps the row under the cursor; SEQ PLAY and SEQ RE
 | Section | Row | Knob | Setting |
 |---|---|---|---|
 | SCREEN | KNOB LAYOUT | K7 | FM-1 (default): K1 MASTER, K2 SELECT, K3 ALGORITHM, K4 PRESETS, K5–K8 the dials. SMK: K1–K4 the dials, K5 MASTER, K6 SELECT, K7 PRESETS, K8 ALGORITHM. The knobs are endless: the new layout works at once. Switched to SMK, the menu's rows move to K1–K4 (K3 switches back) |
+| LIGHTS | PAD LIGHT | K8 | how bright the 16 pads are: 100 % (default, as before), 75 %, 50 %, 25 %; right brighter, left dimmer, at once. The bright states follow it, the dim ones keep most of their light, so at 25 % a dim pad is still plain to see and still apart from a lit one (an empty step 40 → 25, a lit one 255 → 90 of 255) |
 | AUDIO | LIMITER | K8 | SOFT (default): 9 dB more headroom at the power-on MASTER position, the limiter only near full scale, so a held chord keeps its level; MASTER's top as loud as before (turn it up for loudness). CLASSIC: SLOOP's limiter and MASTER curve |
 | PLAY | KEY VELOCITY | K5 | see [Velocity](#velocity) |
 | PLAY | BEND UP | K6 | the pitch wheel up, on the internal sounds (the selected synth track): OFF, 1, 2, 3, 4, 5, 7 or 12 semitones, default 7. MIDI IN's pitch bend has its own (GLO > MIDI 2 > BEND) |

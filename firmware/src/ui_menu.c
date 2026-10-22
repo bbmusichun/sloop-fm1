@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
 /* SLOOP menu (HOME held), in sections as the pages are (2.4): SCREEN (COLOR, ZOOM, KNOB ACCEL (2.7); SMK-37: KNOB
- * LAYOUT instead of KNOB ACCEL; SNOOP37: BOOT LOGO), LIGHTS (LIGHTS, KEYS, NOTES), AUDIO (LOWCUT, USB AUDIO, USB SERIAL (FELUCCA_CDC builds
+ * LAYOUT instead of KNOB ACCEL; SNOOP37: BOOT LOGO), LIGHTS (LIGHTS, KEYS, NOTES; SMK-37: PAD LIGHT), AUDIO (LOWCUT, USB AUDIO, USB SERIAL (FELUCCA_CDC builds
  * only), USB RATE (2.7 beta); SMK-37: LIMITER), SMK-37: PLAY (KEY VELOCITY, BEND UP, BEND DOWN, KNOB ACCEL), MIDI (TRS
  * MIDI OUT, MODE, CHANNEL, LOCAL), DAW (CC MAP, KNOBS, EDIT MAP, RESET MAP), SYSTEM (2ND CORE (dualcore), HARDWARE
  * CALIBRATION, LEARN CLEAR (2.6), ABOUT).
@@ -21,7 +21,11 @@ enum { MI_COLOR, MI_ZOOM,
 #else
        MI_ACCEL,
 #endif
-       MI_LIGHTS, MI_KEYS, MI_NOTES, MI_LOWCUT, MI_USB,
+       MI_LIGHTS, MI_KEYS, MI_NOTES,
+#if BOARD_SMK37
+       MI_PADL,                                    /* SMK-37: LIGHTS > PAD LIGHT (smk_padlight.h), the fourth row */
+#endif
+       MI_LOWCUT, MI_USB,
 #if FELUCCA_CDC
        MI_SERIAL,
 #endif
@@ -49,7 +53,11 @@ static const char *const MI_NAME[MI_COUNT] = {"COLOR", "ZOOM",
 #else
                                               "KNOB ACCEL",
 #endif
-                                              "LIGHTS", "KEYS", "NOTES", "SPEAKER LOWCUT", "USB AUDIO",
+                                              "LIGHTS", "KEYS", "NOTES",
+#if BOARD_SMK37
+                                              "PAD LIGHT",
+#endif
+                                              "SPEAKER LOWCUT", "USB AUDIO",
 #if FELUCCA_CDC
                                               "USB SERIAL",
 #endif
@@ -69,7 +77,7 @@ static const char *const BOOT_NAME[BOOT_N] = {"SNOOP37", "SLOOP", "NONE"};
 enum { MS_SCREEN, MS_LIGHTS, MS_AUDIO, MS_PLAY, MS_MIDI, MS_DAW, MS_SYSTEM, MS_COUNT };
 static const char *const MS_NAME[MS_COUNT] = {"SCREEN", "LIGHTS", "AUDIO", "PLAY", "MIDI", "DAW", "SYSTEM"};
 static const uint8_t MS_FIRST[MS_COUNT + 1] = {MI_COLOR, MI_LIGHTS, MI_LOWCUT, MI_VEL, MI_TRS, MI_DMAP, MI_SYS0, MI_COUNT};
-_Static_assert(MI_LIGHTS - MI_COLOR <= 4 && MI_VEL - MI_LOWCUT <= 4 && MI_TRS - MI_VEL <= 4 && MI_COUNT - MI_SYS0 <= 4,
+_Static_assert(MI_LIGHTS - MI_COLOR <= 4 && MI_LOWCUT - MI_LIGHTS <= 4 && MI_VEL - MI_LOWCUT <= 4 && MI_TRS - MI_VEL <= 4 && MI_COUNT - MI_SYS0 <= 4,
                "SMK-37: four rows a section (K5..K8)");
 #define MS_GAP 10                                  /* (seven tabs: those around this one that fit, menu_tabs) */
 #else
@@ -147,6 +155,7 @@ UI_SMALL static const char *mi_value(uint32_t i, uint16_t *c)
         }
         return trs_out ? "ON" : "OFF";
     case MI_KLAY: return knob_layout ? "SMK" : "FM-1";
+    case MI_PADL: return PADL_NAME[pad_light % PADL_N];
     case MI_MODE: return daw_on ? "DAW" : "SYNTH";
     case MI_DCH: {
         static char b[4];
@@ -219,7 +228,7 @@ UI_SMALL static void draw_menu(void)
 #endif
 #if BOARD_SMK37
     sig += vel_mode * 179424673u + trs_out * 373587883u + smo.dead * 573259391u + bend_up * 817504243u +
-           bend_dn * 941083987u + lim_classic * 1500450271u + knob_layout * 2147483647u;
+           bend_dn * 941083987u + lim_classic * 1500450271u + knob_layout * 2147483647u + pad_light * 1000033u;
     sig += daw_on * 1000003u + daw_ch * 2000029u + daw_local * 3000017u + daw_user * 4000037u + daw_rel * 5000011u +
            daw_user_changed() * 6000047u + (ui.arm == MI_ARM_RESET && ui.arm_t) * 7000003u;
 #endif
@@ -442,6 +451,15 @@ UI_SMALL static void mi_set(uint32_t i, int32_t s)
         break;
     case MI_LIMIT:                                     /* right CLASSIC, left SOFT; OCT+ toggles */
         lim_classic = (uint8_t)(s > 0 ? 1u : s < 0 ? 0u : !lim_classic);
+        break;
+    case MI_PADL:                                      /* right brighter, left dimmer (stops at the ends); OCT+ steps
+                                                        * round 100 75 50 25 % (the pads follow at once) */
+        if (s > 0 && pad_light > 0u)
+            pad_light--;
+        else if (s < 0 && pad_light + 1u < PADL_N)
+            pad_light++;
+        else if (!s)
+            pad_light = (uint8_t)((pad_light + 1u) % PADL_N);
         break;
     case MI_KLAY:                                      /* right SMK, left FM-1; OCT+ toggles. The rows' knobs move with it */
         knob_layout = (uint8_t)(s > 0 ? 1u : s < 0 ? 0u : !knob_layout);
